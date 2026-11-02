@@ -348,6 +348,14 @@ Run these on a throwaway PR before enabling triggers on a real repository.
     confirm the recap does not mention the expected check-run 403 or list
     unmatched required checks as pending. Required checks with matching
     pending commit statuses should still be listed as pending.
+15. On an lf-dbt PR, confirm the Details block ends with a **Rule files:**
+    line that lists `CLAUDE.md` and `AGENTS.md` as read. On an
+    lfx-self-serve PR, confirm the line lists `AGENTS.md` and the
+    `.claude/rules/` files as read and `CONTRIBUTING.md` as skipped (over
+    the 80,000-byte total). Confirm follow-up reviews carry the line too.
+16. When two runs post a cap or debounce notice at the same moment, confirm
+    the later one is rewritten to the `superseded notice=` marker and the
+    earlier one is left as is.
 
 ## Ideas
 
