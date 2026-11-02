@@ -1189,11 +1189,15 @@ never stops the run.
 **Check runs that can't be read.** The credential is a fine-grained token,
 and those have no Checks permission, so
 `lfx_one_github_checks_list_for_ref` returns 403 on private and internal
-repositories. That 403 is expected, not a failed read: make no more
-`lfx_one_github_checks_list_for_ref` calls this run, and do not mention
-it in the recap. Still read the commit statuses. A required check that no
-status meets is then unconfirmed: it never withholds approval, and it is
-not named as pending.
+repositories. A 403 is expected when the Step 1
+`lfx_one_github_pulls_get` response has `base.repo.private: true`
+(internal repositories report it too), or when the error message is
+"Resource not accessible by personal access token". An expected 403 is
+not a failed read: make no more `lfx_one_github_checks_list_for_ref` calls
+this run, and do not mention it in the recap. Any other 403 (a rate
+limit, SSO, or an IP allow list) is a failed read as above. Still read
+the commit statuses. A required check that no status meets is then
+unconfirmed: it never withholds approval, and it is not named as pending.
 
 ### 5b. Build the inline comments
 

@@ -268,10 +268,9 @@ custom integration, `linux-foundation~lfx-one-github`.
   check gate. Fine-grained tokens have no Checks permission, so check runs
   can't be read on private and internal repositories; there the gate uses
   commit statuses only, and says nothing about check runs. An
-  organization owner
-  must approve it. Connect it from your shell and never commit it:
-  `guild integration connect linux-foundation~lfx-one-github --owner
-  linux-foundation`.
+  organization owner must approve it. Connect it from your shell and
+  never commit it: `guild integration connect
+  linux-foundation~lfx-one-github --owner linux-foundation`.
 - Set `REVIEWER_LOGIN` to `lfx-one`. The re-review phrase is
   `@lfx-one re-review`.
 - An `APPROVE` from `lfx-one` counts toward required reviews only if the
@@ -343,11 +342,12 @@ Run these on a throwaway PR before enabling triggers on a real repository.
     required check fail (for example, a commit without a DCO sign-off).
     Confirm a `COMMENTED` review with the approval-withheld marker, the
     ⚠️ **Review passed, required check failed** decision, and a
-    failed-checks line. On a PR
-    with only a failing check that is not required (lf-dbt's `dbt Cloud`),
-    confirm the review still approves and the line marks it not required.
-    On a private or internal repository, confirm the recap does not
-    mention check runs and does not list required checks as pending.
+    failed-checks line. On a PR with only a failing check that is not
+    required (lf-dbt's `dbt Cloud`), confirm the review still approves and
+    the line marks it not required. On a private or internal repository,
+    confirm the recap does not mention the expected check-run 403 or list
+    unmatched required checks as pending. Required checks with matching
+    pending commit statuses should still be listed as pending.
 
 ## Ideas
 
