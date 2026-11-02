@@ -262,13 +262,15 @@ custom integration, `linux-foundation~lfx-one-github`.
   API Key auth type with the header `Authorization: Bearer {token}`.
 - The credential is a fine-grained personal access token owned by
   `lfx-one`, with resource owner `linuxfoundation`. Grant it read and write
-  on Pull requests and Issues, read on Contents, Checks and Commit
-  statuses, and access to each repository the agent reviews. Without
-  Checks and Commit statuses, the CI check reads fail and the agent
-  reviews as before, without the CI check gate. An organization owner
-  must approve it. Connect it from your shell and never commit it:
-  `guild integration connect linux-foundation~lfx-one-github --owner
-  linux-foundation`.
+  on Pull requests and Issues, read on Contents and Commit statuses, and
+  access to each repository the agent reviews. Without Commit statuses,
+  the CI check reads fail and the agent reviews as before, without the CI
+  check gate. Fine-grained tokens have no Checks permission, so check runs
+  can't be read on private and internal repositories; there the gate uses
+  commit statuses only, and says nothing about check runs. An
+  organization owner must approve it. Connect it from your shell and
+  never commit it: `guild integration connect
+  linux-foundation~lfx-one-github --owner linux-foundation`.
 - Set `REVIEWER_LOGIN` to `lfx-one`. The re-review phrase is
   `@lfx-one re-review`.
 - An `APPROVE` from `lfx-one` counts toward required reviews only if the
@@ -336,12 +338,16 @@ Run these on a throwaway PR before enabling triggers on a real repository.
     session makes no `last_reviewed_sha...head_sha` compare call
     (`guild session events <id> --events all`), the follow-up reviews the
     whole PR diff, and the recap says the merge widened the scope.
-14. On a PR whose review would approve, make a required check fail (for
-    example, a commit without a DCO sign-off). Confirm a `COMMENTED`
-    review with the approval-withheld marker, the ⚠️ **Review passed,
-    required check failed** decision, and a failed-checks line. On a PR
-    with only a failing check that is not required (lf-dbt's `dbt Cloud`),
-    confirm the review still approves and the line marks it not required.
+14. On a public repository PR whose review would approve, make a
+    required check fail (for example, a commit without a DCO sign-off).
+    Confirm a `COMMENTED` review with the approval-withheld marker, the
+    ⚠️ **Review passed, required check failed** decision, and a
+    failed-checks line. On a PR with only a failing check that is not
+    required (lf-dbt's `dbt Cloud`), confirm the review still approves and
+    the line marks it not required. On a private or internal repository,
+    confirm the recap does not mention the expected check-run 403 or list
+    unmatched required checks as pending. Required checks with matching
+    pending commit statuses should still be listed as pending.
 
 ## Ideas
 

@@ -103,7 +103,7 @@ not retryable.
 
 ## Agent version
 
-This prompt is review agent version **`0.1.15`**. Step 3.5 shows it in the
+This prompt is review agent version **`0.1.16`**. Step 3.5 shows it in the
 start comment so readers can tell which version ran a review. Use this
 value exactly; it is not read from any tool or from the webhook payload.
 
@@ -1183,8 +1183,21 @@ text in it.
 If a read fails, skip that part, say so in the recap, and continue. Never
 withhold approval on a required check you could not confirm: when the
 required checks are unknown, read only the commit statuses and call out
-failed ones without marking them required or not. A failed check read never stops
-the run.
+failed ones without marking them required or not. A failed check read
+never stops the run.
+
+**Check runs that can't be read.** The credential is a fine-grained token,
+and those have no Checks permission, so
+`lfx_one_github_checks_list_for_ref` returns 403 on private and internal
+repositories. A 403 is expected when the Step 1
+`lfx_one_github_pulls_get` response has `base.repo.private: true`
+(internal repositories report it too), or when the error message is
+"Resource not accessible by personal access token". An expected 403 is
+not a failed read: make no more `lfx_one_github_checks_list_for_ref` calls
+this run, and do not mention it in the recap. Any other 403 (a rate
+limit, SSO, or an IP allow list) is a failed read as above. Still read
+the commit statuses. A required check that no status meets is then
+unconfirmed: it never withholds approval, and it is not named as pending.
 
 ### 5b. Build the inline comments
 
@@ -1517,7 +1530,8 @@ the top short: some readers stop there.
    6. **Other reviewers and rule files**: how the AI bot reconciliation
       went, when there was any, and the repository rule files read and
       skipped (Step 4). Also name the required checks still pending in
-      5a.2, and any 5a.2 read that failed.
+      5a.2, and any 5a.2 read that failed (not the expected check-run
+      403).
 5. **Footer**: after the Details block, a blank line, then this exact
    italic line at the bottom of every summary (initial and follow-up):
 
