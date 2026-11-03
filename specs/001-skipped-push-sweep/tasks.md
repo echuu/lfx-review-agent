@@ -190,8 +190,8 @@ rows 6 and 8).
   `lfx_one_github_issues_remove_label` and post nothing else. When it stops
   at gate B or C, leave the label.
 - [x] T025 [US2] Change Step 5c in `PROMPT.md`: when the run closes out
-  the session, remove the label if the PR was merged, closed or excluded;
-  leave it after a failed submit.
+  the session, remove the label if the PR was merged, closed or excluded,
+  or after every submit attempt failed.
 - [x] T026 [US2] Add candidate fallthrough to Step 0.3 in `PROMPT.md`: if
   the candidate stops at Step 1, a gate, Step 3 or Step 3.2, apply the
   label rule for that stop, post nothing, and try the next candidate.

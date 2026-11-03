@@ -159,8 +159,10 @@ minutes old. Confirm the next sweep runs its initial review.
   new review. If that review dies too, the next sweep posts one stalled
   notice asking for a human review and leaves the PR for the next push
   (FR-013).
-- The sweep's search or a read fails: the sweep ends without posting.
-  The next hour tries again.
+- The sweep's pending search or a read fails: the sweep ends without
+  posting, and the next hour tries again. A failed never-reviewed search
+  skips the remaining never-reviewed searches and keeps the candidates
+  already found.
 - Many PRs are behind at once (for example after an outage): one is
   reviewed per hour, oldest first.
 - A push lands seconds before the sweep, while its own webhook run is
@@ -205,7 +207,9 @@ minutes old. Confirm the next sweep runs its initial review.
   number of candidate PRs per run.
 - **FR-011**: A failed read during the sweep MUST end the run without
   posting, except for reads that the review itself already treats as best
-  effort.
+  effort, the never-reviewed searches (a failure skips the rest of them
+  and keeps the candidates already found), and the head re-read after a
+  pending label remove (a failure adds the label back).
 - **FR-012**: The new schedule and the tool the sweep needs MUST be
   documented in the README with the trigger setup and credential policy,
   like the existing webhook triggers.

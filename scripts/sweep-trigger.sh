@@ -12,7 +12,8 @@
 #
 # An existing trigger keeps its active or inactive state; change that with
 # `guild trigger activate|deactivate`. A new trigger starts active and runs
-# at minute 17 of every hour, which starts live reviews.
+# at minute 17 of every hour, which starts live reviews. With no
+# synchronize trigger left, --apply deactivates the sweep.
 # Never write the repository list to a file in this repository.
 set -euo pipefail
 
@@ -50,10 +51,6 @@ input=$(jq -c --arg ag "$AGENT" '
   | unique
   | {lfx_review_agent_event: "sweep", repos: .}' <<<"$all")
 count=$(jq '.repos | length' <<<"$input")
-if [ "$count" = 0 ]; then
-  echo "no active synchronize triggers for $AGENT; nothing to sweep" >&2
-  exit 1
-fi
 
 ids=$(jq -r --arg ag "$AGENT" --arg n "$NAME" \
   '.[] | select(.type == "time" and .name == $n
@@ -61,6 +58,19 @@ ids=$(jq -r --arg ag "$AGENT" --arg n "$NAME" \
 if [ "$(printf '%s' "$ids" | grep -c .)" -gt 1 ]; then
   echo "more than one \"$NAME\" trigger; fix that by hand first" >&2
   exit 1
+fi
+
+# With no repository left, the sweep would keep its old list: stop it.
+if [ "$count" = 0 ]; then
+  echo "no active synchronize triggers for $AGENT; nothing to sweep" >&2
+  [ -n "$ids" ] || exit 1
+  echo "deactivate  $NAME ($ids)"
+  if $apply; then
+    guild trigger deactivate "$ids" >/dev/null
+  else
+    echo "dry run; rerun with --apply to change the trigger"
+  fi
+  exit 0
 fi
 
 echo "repos: $count"
