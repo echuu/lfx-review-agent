@@ -286,12 +286,12 @@ initial review from the next sweep (quickstart section 4, row 7).
 - [x] T038 Run `markdownlint` from the repository root on every changed
   `.md` file and fix the findings. Re-read `PROMPT.md` changes for unslop
   rules and for `{{ }}` text other than `{{env.KEY}}`.
-- [ ] T039 Open the PR from `feature/20-hourly-sweep` (label
+- [X] T039 Open the PR from `feature/20-hourly-sweep` (label
   `ai-assisted`, assignee `dealako`, body ends with the Claude Code line).
   Confirm Agent Version Check, License Header and DCO pass.
-- [ ] T040 (maintainer) Publish integration 1.0.5 and check it lists 20
+- [X] T040 (maintainer) Publish integration 1.0.5 and check it lists 20
   or 21 operations; create the ALLOW policy for the new operations.
-- [ ] T041 (maintainer) Run the quickstart step 2 tests with
+- [X] T041 (maintainer) Run the quickstart step 2 tests with
   `--account linux-foundation`. If `issues_add_labels` can't create the
   label (403 or 422), stop and revise the plan before merging. Record
   whether the label add moved the PR's `updated_at` in `research.md` R3.

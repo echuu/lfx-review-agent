@@ -131,6 +131,25 @@ the head SHA, the last own review's commit and `updatedAt`, in a few KB.
 space, so the remove call's URL path needs no encoding (renamed before
 release on 2026-11-03).
 
+**Test results** (quickstart step 2, integration 1.0.5, `lfx-one`
+credential, 2026-11-03):
+
+- The label search and a repository-scoped never-reviewed search returned
+  200 with `total_count: 0`. The org-wide `reviewed-by:lfx-one` search was
+  not run; the design doesn't rely on it.
+- `issues_add_labels` on PR #35 returned 200 and created the label
+  (color `ededed`, no description). The token can create it, so no
+  repository needs it set up by hand.
+- The PR's `updated_at` moved on the add (17:45:27 to 19:08:24) and again
+  on the remove (19:08:27). The 10-minute wait therefore starts at the
+  label add, as the quickstart expected. The sweep never reads a PR it has
+  just unlabeled, so the bump on remove has no effect.
+- `issues_remove_label` returned 200 and the label was gone, then 404
+  ("Label does not exist") on the second call.
+- `guild integration version test` rejects integer path values
+  (`issue_number` must be the string `"35"`). This applies only to the
+  test command.
+
 ## R4. Search as `lfx-one`
 
 - With the maintainer's token, an org-wide search with
