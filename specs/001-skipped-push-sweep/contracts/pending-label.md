@@ -1,10 +1,10 @@
 # Contract: the pending label
 
-Name: `lfx-review-agent: pending`. It means "a review of this PR's current
+Name: `lfx-review-agent-pending`. It means "a review of this PR's current
 head may be owed". The sweep's label search reads it:
 
 ```text
-org:linuxfoundation is:pr is:open draft:false label:"lfx-review-agent: pending" updated:<=<now - 10 minutes>
+org:linuxfoundation is:pr is:open draft:false label:"lfx-review-agent-pending" updated:<=<now - 10 minutes>
 ```
 
 sorted by `updated` ascending, `per_page=3`. "now" is the sweep clock

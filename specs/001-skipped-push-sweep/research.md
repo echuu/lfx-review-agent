@@ -69,7 +69,7 @@ out on the server side.
 
 ### Shape A: a pending label (recommended)
 
-The agent puts a label, `lfx-review-agent: pending`, on a PR whenever a
+The agent puts a label, `lfx-review-agent-pending`, on a PR whenever a
 review may be owed, and takes it off when a review finishes on the current
 head:
 
@@ -122,7 +122,9 @@ the head SHA, the last own review's commit and `updatedAt`, in a few KB.
   away.
 
 **Decision**: Shape A. The maintainer confirmed the visible label on
-2026-11-02.
+2026-11-02. The name is `lfx-review-agent-pending`, with no colon or
+space, so the remove call's URL path needs no encoding (renamed before
+release on 2026-11-03).
 
 ## R4. Search as `lfx-one`
 

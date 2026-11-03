@@ -11,7 +11,7 @@
 An hourly Guild time trigger starts the review agent with a sweep input.
 The sweep finds at most one PR that is owed a review and runs that review
 through the existing steps. To keep idle hours cheap, the agent marks PRs
-that may be owed a review with a `lfx-review-agent: pending` label (added
+that may be owed a review with a `lfx-review-agent-pending` label (added
 when a review starts or a push is dropped, removed when a review finishes
 on the current head), so the sweep's main search is normally empty. A
 second, repository-scoped search finds PRs opened in the last 7 days that

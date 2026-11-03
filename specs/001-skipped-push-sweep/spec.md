@@ -195,8 +195,10 @@ minutes old. Confirm the next sweep runs its initial review.
 - **FR-008**: When nothing is eligible, the sweep MUST post nothing on
   GitHub.
 - **FR-009**: The sweep MUST NOT post cap, debounce or skip notices, or
-  any other comment, on a PR it skips. It may clear the mark that says a
-  review is owed.
+  any other comment, on a PR it skips at a gate or because no review is
+  due. It may clear the mark that says a review is owed. An exclusion
+  match behaves as it does on a push: the exclusion notice is posted, and
+  an earlier approval is revoked.
 - **FR-010**: The sweep MUST bound its reads: it checks a fixed maximum
   number of candidate PRs per run.
 - **FR-011**: A failed read during the sweep MUST end the run without

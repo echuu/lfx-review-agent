@@ -48,7 +48,9 @@ After integration 1.0.5 is published and the policy is created. Run with
   time of the label call, in research R3. If it moved, the 10-minute wait
   restarts at the label add, which pushes the SC-001 worst case out by up
   to 10 minutes.
-- `issues_remove_label` on the same PR, twice: expect 200, then 404.
+- `issues_remove_label` on the same PR, twice: expect 200, then 404. After
+  the first call, read the PR and confirm the label is gone, so a 404 can
+  never hide a remove that doesn't work.
 
 ## 3. Rollout order
 

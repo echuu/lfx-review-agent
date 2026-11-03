@@ -43,7 +43,7 @@ Order: oldest `waited_since` first. `pending` candidates come before
 
 ## Pending label
 
-Name: `lfx-review-agent: pending`. See
+Name: `lfx-review-agent-pending`. See
 [contracts/pending-label.md](contracts/pending-label.md).
 
 ```text

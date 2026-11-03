@@ -59,25 +59,25 @@ design.
 **Purpose**: The integration operations, the tool wiring, and the sweep
 entry point in Step 0. No story works without them.
 
-- [ ] T004 Add operation `search_issues` to
+- [x] T004 Add operation `search_issues` to
   `integration/lfx-one-github.openapi.yaml`: `GET /search/issues` with
   query parameters `q` (required), `sort`, `order`, `per_page`, `page`,
   read only, following the style of the existing GET operations. Raise
   `info.version` to `1.0.5`.
-- [ ] T005 Add operation `issues_add_labels` to
+- [x] T005 Add operation `issues_add_labels` to
   `integration/lfx-one-github.openapi.yaml`:
   `POST /repos/{owner}/{repo}/issues/{issue_number}/labels`, body
   `{"labels": [...]}` with `labels` items pinned to
-  `enum: ["lfx-review-agent: pending"]`, "the same way
+  `enum: ["lfx-review-agent-pending"]`, "the same way
   `issues_create_reaction` pins `content` to `eyes`".
-- [ ] T006 Add operation `issues_remove_label` to
+- [x] T006 Add operation `issues_remove_label` to
   `integration/lfx-one-github.openapi.yaml`:
   `DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}`, with
   `name` pinned to the same one-value enum. Document the 404 response
   ("returns 404 when the label is not on the PR").
 - [x] T007 Skipped: the probe found the session start line (research
   R2), so no `rate_limit_get` operation is added.
-- [ ] T008 [P] In `guild.yaml`, pin the `lfx-one-github` integration to
+- [x] T008 [P] In `guild.yaml`, pin the `lfx-one-github` integration to
   `1.0.5` and add the tools `lfx_one_github_search_issues`,
   `lfx_one_github_issues_add_labels` and
   `lfx_one_github_issues_remove_label`. Keep the LF license header in the
@@ -135,11 +135,11 @@ section 4, rows 2 to 4).
 
 - [ ] T016 [US1] Add the label at Step 1.5 in `PROMPT.md`: when gate B or
   gate C stops a webhook run, call `lfx_one_github_issues_add_labels` with
-  `lfx-review-agent: pending` after the existing notice handling. On a
+  `lfx-review-agent-pending` after the existing notice handling. On a
   sweep run, gates B and C leave the label as it is.
 - [ ] T017 [US1] Add the label at Step 3.5 in `PROMPT.md`: after the
   ownership check says this run owns the review, add
-  `lfx-review-agent: pending`. A superseded run never touches the label.
+  `lfx-review-agent-pending`. A superseded run never touches the label.
 - [ ] T018 [US1] Change Step 6 in `PROMPT.md`: after the recap is written,
   remove the label, then re-read the PR, and add it again if `head.sha` is
   not the reviewed head. Remove before the check so a push during Step 6
@@ -150,7 +150,7 @@ section 4, rows 2 to 4).
   `updated` ascending:
 
   ```text
-  org:linuxfoundation is:pr is:open draft:false label:"lfx-review-agent: pending" updated:<=<now - 10 minutes>
+  org:linuxfoundation is:pr is:open draft:false label:"lfx-review-agent-pending" updated:<=<now - 10 minutes>
   ```
 
   "now" is the sweep clock (T014). Keep only items whose `repository_url`
@@ -278,7 +278,7 @@ initial review from the next sweep (quickstart section 4, row 7).
   checklist items for quickstart section 4 (FR-012). No repository names
   or IDs.
 - [ ] T036 [P] Update `CLAUDE.md`: add the label name
-  `lfx-review-agent: pending` to the read-back marker list, and
+  `lfx-review-agent-pending` to the read-back marker list, and
   `scripts/sweep-trigger.sh` to the Files table.
 - [ ] T037 Update the "Scope" section in `PROMPT.md`: list the hourly
   sweep; stall detection stays "not handled".
