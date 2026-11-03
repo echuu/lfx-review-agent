@@ -19,9 +19,9 @@ The hourly time trigger passes this JSON object as the run's input
 - `repos` entries must match `^linuxfoundation/[A-Za-z0-9._-]+$`. Ignore
   any that don't. With no valid entry, stop and report a configuration
   fault.
-- How Guild wraps the input in the run's first message is confirmed by the
-  probe (quickstart step 1). The prompt must not depend on the wrapper
-  text, only on the JSON object.
+- Guild delivers the input as a bare JSON object at the end of the run's
+  first message, after its preamble (probe of 2026-11-03, research R1). The
+  prompt must not depend on the preamble text, only on the JSON object.
 
 ## Producer
 

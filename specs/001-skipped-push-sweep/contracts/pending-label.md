@@ -4,13 +4,11 @@ Name: `lfx-review-agent: pending`. It means "a review of this PR's current
 head may be owed". The sweep's label search reads it:
 
 ```text
-org:linuxfoundation is:pr is:open draft:false label:"lfx-review-agent: pending"
+org:linuxfoundation is:pr is:open draft:false label:"lfx-review-agent: pending" updated:<=<now - 10 minutes>
 ```
 
-sorted by `updated` ascending, `per_page=3`. This is the sweep's first
-search. After it, read the clock (research R2), then drop every item whose
-`updated_at` is less than 10 minutes before now. Oldest-first order puts
-the eligible items first, so the drop only trims the end of the page.
+sorted by `updated` ascending, `per_page=3`. "now" is the sweep clock
+(research R2), known before the first search.
 
 ## Who sets it
 

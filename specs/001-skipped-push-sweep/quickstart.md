@@ -3,7 +3,7 @@
 The maintainer runs every Guild command here. `<workspace-id>` and other
 IDs are placeholders: this repository is public.
 
-## 1. Probe the time trigger (before implementation)
+## 1. Probe the time trigger (done 2026-11-03)
 
 Settles R1 and R2: the message a time-triggered run receives, and whether
 it carries the firing time. Guild has no trigger delete, so the probe is
@@ -49,12 +49,10 @@ After integration 1.0.5 is published and the policy is created. Run with
   restarts at the label add, which pushes the SC-001 worst case out by up
   to 10 minutes.
 - `issues_remove_label` on the same PR, twice: expect 200, then 404.
-- `rate_limit_get`, only if step 1 found no timestamp: expect
-  `resources.search.reset` within 60 seconds of the current time.
 
 ## 3. Rollout order
 
-1. Publish integration 1.0.5 and check that it lists 20 or 21 operations.
+1. Publish integration 1.0.5 and check that it lists 20 operations.
 2. Create the ALLOW policy for the new operations.
 3. Merge the PR and run `guild agent save --publish --version-number
    0.1.18 -m "..."`.

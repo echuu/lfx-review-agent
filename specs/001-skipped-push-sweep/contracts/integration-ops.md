@@ -8,7 +8,6 @@ to the README credential policy. The existing 17 operations are unchanged.
 | `search_issues` | `lfx_one_github_search_issues` | `GET /search/issues` with `q`, `sort`, `order`, `per_page`, `page` | Sweep candidate searches (R3, R5) |
 | `issues_add_labels` | `lfx_one_github_issues_add_labels` | `POST /repos/{owner}/{repo}/issues/{issue_number}/labels`, body `{"labels": ["lfx-review-agent: pending"]}` | Step 3.5, gates B and C, Step 6 re-add |
 | `issues_remove_label` | `lfx_one_github_issues_remove_label` | `DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}` | Step 6, sweep cleanup |
-| `rate_limit_get` | `lfx_one_github_rate_limit_get` | `GET /rate_limit` | Sweep clock, only if the probe shows no firing time (R2) |
 
 ## Constraints
 

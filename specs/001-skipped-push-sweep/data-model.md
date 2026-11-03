@@ -17,7 +17,7 @@ The time trigger's `--input`, written by `scripts/sweep-trigger.sh`. See
 
 | Field | Source | Rule |
 | --- | --- | --- |
-| `now` | Firing time from the message, if Guild sends one (R2); else `resources.search.reset - 60` from `GET /rate_limit`, read after the first search. | Used as `event_time` for the rest of the run. Never later than the true time. |
+| `now` | The session start line, the first line of the run's first message: `* This session was started at HH:MM:SS (24h, UTC) on <Weekday>, <Month> <DD>, <YYYY>.` (R2). | Used as `event_time` for the rest of the run. Read only from the first line. |
 
 ## Candidate PR
 
@@ -36,8 +36,7 @@ Eligibility, checked by the existing steps:
 - No exclusion notice, under the 10-review limit, no review running, last
   own comment older than 5 minutes (Step 1.5 gates A0, A, B, C).
 - A review is due (Step 3).
-- Updated at least 10 minutes before `now` (a filter after the label
-  search; a search qualifier in the never-reviewed searches).
+- Updated at least 10 minutes before `now` (search qualifier).
 
 Order: oldest `waited_since` first. `pending` candidates come before
 `never-reviewed` ones.

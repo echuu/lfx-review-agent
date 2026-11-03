@@ -12,9 +12,13 @@ out on purpose: this repository is public.
   `api` triggers. A time trigger stores `agent_input` (a JSON object) and
   `next_run_at`. `guild trigger update` can change `--input` later, so the
   repository list can change without a new trigger.
-- **Open**: What message the run receives (how Guild wraps
-  `agent_input`), and whether it carries the firing time. Settled by the
-  probe in [quickstart.md](quickstart.md), step 1.
+- **Probe result (2026-11-03)**: The probe trigger fired at 07:17:24 UTC.
+  The run's first user message is Guild's preamble (session start line,
+  workspace name, frontend URL, a `workspace_capabilities` JSON block),
+  then `agent_input` as a bare JSON object on its own, with no wrapper
+  text. A webhook run's message instead starts the payload with "You just
+  received a webhook from github". The 0.1.17 prompt stopped at Step 0,
+  made no GitHub calls and posted nothing. The run took 4 seconds.
 - **Alternatives considered**: An `api` trigger called from outside
   Guild (needs a scheduler we'd have to host); one time trigger per
   repository (29 times the idle runs; rejected with the spec).
@@ -25,25 +29,24 @@ The prompt has no clock. Webhook runs use the payload's
 `pull_request.updated_at` or `comment.created_at` as "now". A sweep run has
 no event.
 
-- **Decision**: If the probe shows that Guild puts the firing time in the
-  message, use it. Otherwise read `GET /rate_limit` right after the first
-  search call, and use `resources.search.reset - 60` seconds as "now".
-- **Rationale**: The search limit window is 60 seconds and starts at the
-  first search call, so `reset - 60` is at most about a minute before the
-  true time. Measured: a `rate_limit` read 3 seconds after the first search
-  returned a reset 57 seconds ahead. A clock that runs slightly behind is
-  the safe direction for every gate: ages come out smaller, so the sweep
-  waits longer, never shorter. `GET /rate_limit` does not count against the
-  limit.
-- **To check**: what `reset` returns when no search ran in the last
-  minute, so the prompt never reads it before a search.
-- **Order**: The label search carries no time qualifier, so the clock can
-  be read after it. Only the never-reviewed searches, which run later, put
-  the clock into a query.
-- **Alternatives considered**: The newest `updated_at` in the search
-  results (can be hours behind on a quiet weekend, which would put a wrong
-  time in the start comment); the `core` reset (an hourly window, too
-  coarse).
+- **Decision**: Use the session start line that Guild puts first in every
+  run's first message: `* This session was started at HH:MM:SS (24h, UTC)
+  on <Weekday>, <Month> <DD>, <YYYY>.` Read it from the first line of the
+  first message only, never from text further down, which can hold PR
+  content.
+- **Rationale**: The probe and a webhook session from 2026-11-02 both
+  carry the line, to the second. It is written when the session starts, a
+  few seconds before any search, so it runs slightly behind the true time,
+  which is the safe direction for every age check.
+- **Result**: No `rate_limit_get` operation is needed. The integration adds
+  three operations, not four. The label search can carry its
+  `updated:<=` qualifier again, because the clock is known before the first
+  search.
+- **Alternatives considered**: `GET /rate_limit` with
+  `resources.search.reset - 60` (measured within about 3 seconds, but only
+  readable after a search, which forced the label search to filter on our
+  side); the newest `updated_at` in search results (hours behind on a quiet
+  weekend); the `core` reset (an hourly window, too coarse).
 
 ## R3. How does the sweep find candidates cheaply?
 

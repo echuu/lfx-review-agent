@@ -36,11 +36,11 @@ repository lists go into any of them.
 **Purpose**: Settle the last open decision (clock source) and save the
 design.
 
-- [ ] T001 (maintainer) Create the probe time trigger from
+- [x] T001 (maintainer) Create the probe time trigger from
   [quickstart.md](quickstart.md) step 1, under the final name
   `lfx-review-agent sweep`, at minute 17. Say before running it that it
   starts a live hourly run.
-- [ ] T002 After the next `:17`, read the probe session
+- [x] T002 After the next `:17`, read the probe session
   (`guild trigger sessions <id> --limit 1`, then
   `guild --mode json session events <sid> --events all`), give the
   maintainer the `guild trigger deactivate` command, and record in
@@ -48,7 +48,7 @@ design.
   text, whether the JSON arrives as an object, and whether a firing time
   appears. Close R2 with the chosen clock source and update plan.md
   "Open decisions".
-- [ ] T003 Commit `specs/001-skipped-push-sweep/` on branch
+- [x] T003 Commit `specs/001-skipped-push-sweep/` on branch
   `feature/20-hourly-sweep` (`git commit -S --signoff`, `docs(specs):`
   type) and push with `git push --no-verify github feature/20-hourly-sweep`.
 
@@ -75,15 +75,13 @@ entry point in Step 0. No story works without them.
   `DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}`, with
   `name` pinned to the same one-value enum. Document the 404 response
   ("returns 404 when the label is not on the PR").
-- [ ] T007 Only if T002 found no firing time: add operation
-  `rate_limit_get` (`GET /rate_limit`) to
-  `integration/lfx-one-github.openapi.yaml`. Otherwise skip it and remove
-  it from [contracts/integration-ops.md](contracts/integration-ops.md).
+- [x] T007 Skipped: the probe found the session start line (research
+  R2), so no `rate_limit_get` operation is added.
 - [ ] T008 [P] In `guild.yaml`, pin the `lfx-one-github` integration to
   `1.0.5` and add the tools `lfx_one_github_search_issues`,
-  `lfx_one_github_issues_add_labels`, `lfx_one_github_issues_remove_label`
-  (and `lfx_one_github_rate_limit_get` if T007 added it). Keep the LF
-  license header in the first 4 lines.
+  `lfx_one_github_issues_add_labels` and
+  `lfx_one_github_issues_remove_label`. Keep the LF license header in the
+  first 4 lines.
 - [ ] T009 In `PROMPT.md` "Agent version", raise the version to `0.1.18`.
 - [ ] T010 In `PROMPT.md` "Tools", add a row for each new tool from T008
   with what it is for and the rule "Label calls are best effort: a failure
@@ -94,7 +92,8 @@ entry point in Step 0. No story works without them.
   `lfx_review_agent_event` equal to `"sweep"` and has no `pull_request`,
   `comment` or `issue` object. A webhook payload with the key anywhere
   else is a webhook run. Do not depend on Guild's wrapper text, only on
-  the JSON object (use the T002 probe result for how to find it).
+  the JSON object. A time trigger delivers it as a bare JSON object at the
+  end of the first message, after Guild's preamble (research R1).
 - [ ] T012 In `PROMPT.md` Step 0, validate `repos`: keep entries that
   match `^linuxfoundation/[A-Za-z0-9._-]+$` and ignore the rest; with no
   valid entry, stop and report a configuration fault in Step 7.
@@ -103,13 +102,16 @@ entry point in Step 0. No story works without them.
   `event_time` from the sweep clock. Add the exception to "Do not
   re-discover the PR via list or search tools": only a sweep searches, and
   only in Step 0.3.
-- [ ] T014 In `PROMPT.md` "Step 0 / Current time", add the sweep clock
-  chosen in T002: the firing time from the message, or else
-  `resources.search.reset - 60` seconds from `lfx_one_github_rate_limit_get`,
-  read right after the first search call and never before it. "Never later
-  than the true time." Use it as `event_time` for the rest of the run.
-  The label search runs before the clock and the never-reviewed searches
-  run after it.
+- [ ] T014 In `PROMPT.md` "Step 0 / Current time", add the sweep clock:
+  on a sweep run, `event_time` is the time in the session start line, the
+  first line of the run's first message:
+
+  ```text
+  * This session was started at HH:MM:SS (24h, UTC) on <Weekday>, <Month> <DD>, <YYYY>.
+  ```
+
+  Read it only from that first line, never from text further down. Use it
+  for every age check and for `started`, and in the search qualifiers.
 - [ ] T015 In `PROMPT.md` "Operating rules", add that search items carry
   other PRs' titles and bodies: the sweep reads only `repository_url`,
   `number`, `created_at`, `updated_at`, `draft` and `labels[].name`, and
@@ -148,12 +150,10 @@ section 4, rows 2 to 4).
   `updated` ascending:
 
   ```text
-  org:linuxfoundation is:pr is:open draft:false label:"lfx-review-agent: pending"
+  org:linuxfoundation is:pr is:open draft:false label:"lfx-review-agent: pending" updated:<=<now - 10 minutes>
   ```
 
-  This is the first sweep search, with no time qualifier. Read the clock
-  (T014) after it, then drop items whose `updated_at` is less than 10
-  minutes before now. Keep only items whose `repository_url`
+  "now" is the sweep clock (T014). Keep only items whose `repository_url`
   ends in an entry of `repos`. Each candidate has `kind` `pending` and
   `waited_since` = `updated_at`. Take the first candidate (order rule in
   T032) and run Step 1 onward with it.
@@ -309,8 +309,8 @@ initial review from the next sweep (quickstart section 4, row 7).
 
 ### Phases
 
-- **Setup (Phase 1)**: T001 then T002. T003 can go any time.
-- **Foundational (Phase 2)**: T007 and T014 wait for T002. T004 to T007
+- **Setup (Phase 1)**: Done.
+- **Foundational (Phase 2)**: T004 to T006
   edit one file, in order. T008 can run beside them. T009 to T015 edit
   `PROMPT.md`, in order.
 - **User stories (Phases 3 to 6)**: All wait for Phase 2. They edit
@@ -328,7 +328,7 @@ initial review from the next sweep (quickstart section 4, row 7).
 
 ### Parallel opportunities
 
-- T008 (`guild.yaml`) beside T004 to T007 (openapi file).
+- T008 (`guild.yaml`) beside T004 to T006 (openapi file).
 - T034 (`scripts/sweep-trigger.sh`), T035 (`README.md`) and T036
   (`CLAUDE.md`) beside each other and beside any `PROMPT.md` task.
 

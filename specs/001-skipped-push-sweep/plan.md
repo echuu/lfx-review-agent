@@ -48,7 +48,7 @@ An idle sweep run's tool output within a few KB (SC-004).
 **Constraints**: At most one review per sweep run and at most 3
 candidates tried. Search queries of 256 characters or less (about six
 `repo:` qualifiers). No repository list, workspace ID or credential ID in
-the public repository. The agent has no clock (research R2).
+the public repository. The clock is the session start line (research R2).
 
 **Scale/Scope**: 720 sweep runs a month; at most 24 sweep reviews a day.
 
@@ -85,13 +85,12 @@ Re-checked after design: no violations, so no Complexity Tracking entries.
 
 ### New step: Step 0.3 "Pick a PR (sweep only)"
 
-1. Run the label search
-   ([contracts/pending-label.md](contracts/pending-label.md)), which has
-   no time qualifier.
-2. Read the clock (R2). Drop label results updated less than 10 minutes
-   ago. Then, unless 3 candidates are in hand, run the never-reviewed
-   search (R5) in groups of six repositories. Keep only items in `repos`.
-   Read only structured fields (R7).
+1. Read the clock from the session start line (R2).
+2. Run the label search
+   ([contracts/pending-label.md](contracts/pending-label.md)), then,
+   unless 3 candidates are in hand, the never-reviewed search (R5) in
+   groups of six repositories. Keep only items in `repos`. Read only
+   structured fields (R7).
 3. Order the candidates (data-model.md) and take the first. Run Step 1
    onward with it.
 4. If it stops at Step 1, a gate or Step 3, post nothing, apply the label
@@ -116,7 +115,7 @@ Re-checked after design: no violations, so no Complexity Tracking entries.
 
 ### Repository files
 
-- `integration/lfx-one-github.openapi.yaml`: 3 or 4 new operations,
+- `integration/lfx-one-github.openapi.yaml`: 3 new operations,
   version 1.0.5.
 - `guild.yaml`: pin 1.0.5, add the tools.
 - `scripts/sweep-trigger.sh` (new): builds `repos` from the webhook
@@ -163,7 +162,7 @@ feature touches the existing files above and adds one script.
 ## Rollout
 
 1. Probe the time trigger (quickstart step 1), then record the result in
-   `research.md`. This settles whether `rate_limit_get` is needed.
+   `research.md`. Done 2026-11-03: the clock is the session start line.
 2. Implement on this branch and open the PR.
 3. Publish integration 1.0.5, create the ALLOW policy, run the quickstart
    step 2 tests.
@@ -173,4 +172,5 @@ feature touches the existing files above and adds one script.
 ## Open decisions
 
 - **Visible label** (R3, Shape A): confirmed 2026-11-02.
-- **Clock source** (R2): set by the probe.
+- **Clock source** (R2): the session start line, confirmed by the probe
+  on 2026-11-03.
