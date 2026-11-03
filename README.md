@@ -214,7 +214,11 @@ triggers, so the list never goes into this repository. Without `--apply`
 it only prints what it would do. It updates the existing trigger in place,
 keeping its active or inactive state, or creates it when there is none
 (a new trigger starts active). Guild has no trigger delete; use
-`guild trigger deactivate <id>` to stop the sweep.
+`guild trigger deactivate <id>` to stop the sweep. When a repository
+leaves the review, rerun the script and delete the
+`lfx-review-agent-pending` label in that repository. The sweep removes the
+label from pull requests outside its list, but only while the token can
+still reach them.
 
 ```bash
 WS=<workspace-id> scripts/sweep-trigger.sh            # dry run

@@ -142,8 +142,9 @@ credential, 2026-11-03):
   repository needs it set up by hand.
 - The PR's `updated_at` moved on the add (17:45:27 to 19:08:24) and again
   on the remove (19:08:27). The 10-minute wait therefore starts at the
-  label add, as the quickstart expected. The sweep never reads a PR it has
-  just unlabeled, so the bump on remove has no effect.
+  label add, as the quickstart expected. Step 6 reads the PR right after
+  the remove, but uses only `head.sha`, so the bump on remove has no
+  effect.
 - `issues_remove_label` returned 200 and the label was gone, then 404
   ("Label does not exist") on the second call.
 - `guild integration version test` rejects integer path values

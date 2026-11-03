@@ -154,16 +154,21 @@ Never rename it: open pull requests carry it.
   at gate C and `head_sha` differs from the `commit_id` of the most recent
   own review that carries `<!-- lfx-review-agent:review -->` (use the list
   the approval guard fetched); and in Step 3.5, once this run owns the
-  review.
+  review or when a comment read there fails after the start comment was
+  posted.
 - **Remove** it in Step 6 after the recap is written, then call
   `lfx_one_github_pulls_get`, and add it again if `head.sha` differs from
-  `head_sha`. Removing before the check means a push during Step 6 is
-  never lost.
+  `head_sha` or the read fails. Removing before the check means a push
+  during Step 6 is never lost.
 - **Remove** it in Step 5c when the PR was merged, closed or excluded, or
   when every submit attempt failed. A PR that keeps failing waits for its
   next push, so the sweep cannot loop on it.
 - On a **sweep**, remove it when the run stops at Step 1, gate A0, gate A,
-  Step 3 or Step 3.2. Leave it when the run stops at gate B or C.
+  Step 3 or Step 3.2. After a Step 3 stop, check the head again as Step 6
+  does, since a push may have started a review meanwhile. Leave it when
+  the run stops at gate B or C.
+- On a **sweep**, remove it from a pending candidate that Step 0.3 drops
+  because its repository is not in `repos`.
 
 ## Step 0: Read the triggering event
 
@@ -217,9 +222,10 @@ and only in Step 0.3.
 | `number` | `number` (or `pull_request.number`) | `issue.number` | the candidate from Step 0.3 |
 | `event_time` | `pull_request.updated_at` | `comment.created_at` | the session start line (see "Current time") |
 
-If `repository.owner.login` or `repository.name` is missing, use
-`repository.full_name` split on `/`. If `owner`, `repo`, or `number` still
-cannot be read, treat it as a fault: stop and report rather than guessing.
+For a webhook event, if `repository.owner.login` or `repository.name` is
+missing, use `repository.full_name` split on `/`. If `owner`, `repo`, or
+`number` still cannot be read, treat it as a fault: stop and report rather
+than guessing. A sweep has no such values until Step 0.3 picks a candidate.
 
 `head_sha` always comes from Step 1, never from the payload. Another push
 can land between the event and this run, and the files reviewed and the
@@ -255,7 +261,9 @@ and bodies: read only `repository_url`, `number`, `created_at`,
 `<week>` is the date 7 days before `event_time`, as `YYYY-MM-DD`. A
 candidate's `owner` and `repo` are the last two path segments of
 `repository_url`; drop any candidate that is not in `repos` or
-is a draft.
+is a draft. Remove the pending label from a dropped pending candidate
+that is not in `repos`, so such pull requests cannot fill the pending
+search every hour.
 
 1. **Pending.** Search with `per_page: 10`, `sort: updated`, `order: asc`
    and this `q`. If it fails, stop without posting; the next hour tries
@@ -265,8 +273,8 @@ is a draft.
    org:linuxfoundation is:pr is:open draft:false label:lfx-review-agent-pending updated:<=<cutoff>
    ```
 
-2. **Never reviewed.** While there are fewer than 3 candidates, search
-   `repos` in groups of up to 10 entries, at most 3 searches, with
+2. **Never reviewed.** If there are fewer than 3 candidates, search
+   every group of up to 10 `repos` entries, at most 3 searches, with
    `per_page: 3`, `sort: created`, `order: asc` and this `q`, one `repo:`
    per entry:
 
@@ -274,9 +282,10 @@ is a draft.
    is:pr is:open draft:false -reviewed-by:{{env.REVIEWER_LOGIN}} -commenter:{{env.REVIEWER_LOGIN}} created:>=<week> updated:<=<cutoff> repo:<entry> repo:<entry>
    ```
 
-   These go after the pending candidates, in search order. If one of
-   these searches fails, skip the rest of them, keep the candidates found
-   so far, and report the failure in Step 7.
+   Merge the results of all groups, oldest `created_at` first, and add
+   them after the pending candidates until there are 3. If one of these
+   searches fails, skip the rest of them, keep the results found so far,
+   and report the failure in Step 7.
 3. Take the first candidate. Set `owner`, `repo` and `number` from it and
    run Step 1 onward. Start each candidate fresh: carry nothing from an
    earlier one except `event_time` and `repos`.
@@ -442,8 +451,9 @@ silently instead, and the duplicate notice check does not run. A sweep
 also stops, before gate A0, when the PR has 2 or more own `abandoned`
 comments and `abandoned_starts` in total that are newer than its most
 recent `session-summary` (or with no summary): its reviews keep dying, so
-the sweep leaves it for the next push. Remove the pending label; this is
-a gate stop for Step 0.3.
+the sweep leaves it for the next push. Run the approval guard (below)
+before this stop, as for gates A, B and C. Then remove the pending label;
+this is a gate stop for Step 0.3.
 
 **A0. Excluded pull request.** If any own comment is an `exclusion-notice`,
 stop. An earlier run found that this PR touches an area in "Review
@@ -469,12 +479,13 @@ a `re-review` gets a skip notice. Do not post another exclusion notice.
   `comment.id`) right after the cap marker, so Step 0.5 recognizes a
   redelivery. Omit it for `opened`, `synchronize` and `ready_for_review`.
 
-**Approval guard for gates A, B and C.** These gates stop a run before
-Step 3.2, so on their own they would leave an earlier approval standing
-on excluded changes in a repository that keeps stale approvals. Before
-gate A, B or C stops a run (including with a cap, debounce, or skip
-notice), check for a **live own approval** in the review list (fetch it as
-Step 1.5 does if it is not fetched yet). Take the own reviews (`user.login
+**Approval guard for gates A, B and C.** These gates, and the sweep's
+abandoned-reviews stop, stop a run before Step 3.2, so on their own they
+would leave an earlier approval standing on excluded changes in a
+repository that keeps stale approvals. Before one of them stops a run
+(including with a cap, debounce, or skip notice), check for a **live own
+approval** in the review list (fetch it as Step 1.5 does if it is not
+fetched yet). Take the own reviews (`user.login
 == "{{env.REVIEWER_LOGIN}}"`) whose `body` contains
 `<!-- lfx-review-agent:review -->` or `<!-- lfx-review-agent:excluded`
 (the Step 3.2 revoking review), with `state` `APPROVED` or
@@ -732,8 +743,10 @@ cap, in-progress, debounce).
   first review and one whose first review did not finish.
 - **Otherwise**, compare `head_sha` against `last_reviewed_sha`. If they
   match, `last_reviewed_sha` is unset, or that review has no `commit_id`,
-  stop: no review is due. Otherwise proceed to Step 3.2 as a **follow-up
-  review**, scoped to the diff between `last_reviewed_sha` and `head_sha`.
+  stop: no review is due, and the "Pending label" rule removes the label
+  and checks the head again. Otherwise proceed to Step 3.2 as a
+  **follow-up review**, scoped to the diff between `last_reviewed_sha` and
+  `head_sha`.
 
 ## Step 3.2: Check the review exclusions
 
@@ -882,6 +895,8 @@ new one, and so a concurrent firing can see an in-progress session (Step
      session marker, so Step 1.5 does not count it as an attempt. Then
      stop: do not gather material, and do not submit a review or touch the
      owner's comment. Report in Step 7 that this run was superseded.
+   - If this read, or the re-fetch in item 5, fails, add the pending
+     label, then stop as "Error handling" says.
    Comment ids only increase, so the earlier poster always wins, even when
    its own check cannot yet see the later comment. This narrows the race
    to two comments landing before either run reads back; it is not a hard
@@ -1720,7 +1735,7 @@ the top short: some readers stop there.
 
 After the update, remove the pending label, call
 `lfx_one_github_pulls_get`, and add the label again if `head.sha` differs
-from `head_sha` (see "Pending label").
+from `head_sha` or the read fails (see "Pending label").
 
 The conversation URL does not change on edit; reuse the `html_url`
 captured in Step 3.5 for the final report. If the fallback created a
@@ -1768,12 +1783,13 @@ whether its pending label was removed. A sweep with no candidate reports
 - Any other tool failure (rate limit, permission, network), apart from the
   single 422 retry and the server-error retries in 5c, the best-effort
   display-name lookup in Step 6, the rule-file reads in Step 4, the CI
-  check reads in 5a.2, the best-effort reaction in Step 0.5, and the
-  best-effort pending label calls: stop this run. A 5a.2 read that fails
-  for any reason, including a 401, a 403 or a credential policy denial,
-  never stops the run. If Step 3.5
-  already posted a session-start comment, leave it. Do not delete it. A
-  later firing treats a start younger than 45 minutes as in-progress
+  check reads in 5a.2, the best-effort reaction in Step 0.5, the
+  best-effort pending label calls, the never-reviewed searches in Step
+  0.3, and the head re-read after a pending label remove: stop this run.
+  A 5a.2 read that fails for any reason, including a 401, a 403 or a
+  credential policy denial, never stops the run. If Step 3.5 already
+  posted a session-start comment, leave it. Do not delete it. A later
+  firing treats a start younger than 45 minutes as in-progress
   (silent skip) and one older than 45 minutes as abandoned (it edits that
   comment to the `abandoned` marker and opens a new session). There is no
   other state to roll back; a re-delivered or future webhook event

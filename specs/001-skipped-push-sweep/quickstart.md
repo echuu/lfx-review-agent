@@ -58,7 +58,7 @@ After integration 1.0.5 is published and the policy is created. Run with
 2. Create the ALLOW policy for the new operations.
 3. Merge the PR and run `guild agent save --publish --version-number
    0.1.18 -m "..."`.
-4. Run `scripts/sweep-trigger.sh` to set the full `repos` input, then
+4. Run `scripts/sweep-trigger.sh --apply` to set the full `repos` input, then
    `guild trigger activate <sweep-trigger-id>`.
 
 Skipping step 1 or 2 makes the save fail, as it did for 0.1.15.

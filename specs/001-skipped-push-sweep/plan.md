@@ -167,7 +167,7 @@ feature touches the existing files above and adds one script.
 3. Publish integration 1.0.5, create the ALLOW policy, run the quickstart
    step 2 tests.
 4. Merge, then `guild agent save --publish --version-number 0.1.18`.
-5. Run `scripts/sweep-trigger.sh`, then activate the sweep trigger.
+5. Run `scripts/sweep-trigger.sh --apply`, then activate the sweep trigger.
 
 ## Open decisions
 
