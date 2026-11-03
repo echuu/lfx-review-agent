@@ -13,9 +13,10 @@ the agent is a prompt plus a Guild manifest.
 | File | Role |
 | --- | --- |
 | `PROMPT.md` | The agent's system prompt. All behavior lives here. |
-| `guild.yaml` | Guild manifest: the `lfx-one-github` integration and its 17 tools. |
+| `guild.yaml` | Guild manifest: the `lfx-one-github` integration and its 20 tools. |
 | `README.md` | Setup: onboarding steps, workspace variables, triggers, credential policy, test checklist. |
 | `scripts/onboard-repo.sh` | Creates a repository's webhook triggers (onboarding step 4). |
+| `scripts/sweep-trigger.sh` | Sets the hourly sweep trigger's repository list from the webhook triggers. |
 | `.markdownlint.json` | Lint config (80 columns; tables and code blocks exempt). |
 
 `guild.json`, `.guild/cache/` and `.npmrc` are local Guild files, excluded
@@ -39,6 +40,8 @@ through `.git/info/exclude`. Never commit them.
   `:review-of`, `:session`, `:superseded`, `:cap`, `:debounce`, `:skip`,
   `:request`, `:abandoned`, `:approval-withheld`, `:excluded`, `:summary`)
   are read back by later runs. Changing one breaks cycle state on open PRs.
+  The same holds for the `lfx-review-agent-pending` label and the
+  `lfx_review_agent_event` sweep input key.
 - To exclude another area from auto-review, add a row to the "Review
   exclusions" table in `PROMPT.md`. Never rename a released `Rule` value:
   open PRs carry it in their exclusion notice.

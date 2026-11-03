@@ -82,27 +82,27 @@ entry point in Step 0. No story works without them.
   `lfx_one_github_issues_add_labels` and
   `lfx_one_github_issues_remove_label`. Keep the LF license header in the
   first 4 lines.
-- [ ] T009 In `PROMPT.md` "Agent version", raise the version to `0.1.18`.
-- [ ] T010 In `PROMPT.md` "Tools", add a row for each new tool from T008
+- [x] T009 In `PROMPT.md` "Agent version", raise the version to `0.1.18`.
+- [x] T010 In `PROMPT.md` "Tools", add a row for each new tool from T008
   with what it is for and the rule "Label calls are best effort: a failure
   never stops a review. Step 7 reports it." State that removing a label
   that isn't there (404) counts as success.
-- [ ] T011 In `PROMPT.md` "Step 0 / Identify the event", add the sweep
+- [x] T011 In `PROMPT.md` "Step 0 / Identify the event", add the sweep
   event: a run is a sweep only when the input's top level has
   `lfx_review_agent_event` equal to `"sweep"` and has no `pull_request`,
   `comment` or `issue` object. A webhook payload with the key anywhere
   else is a webhook run. Do not depend on Guild's wrapper text, only on
   the JSON object. A time trigger delivers it as a bare JSON object at the
   end of the first message, after Guild's preamble (research R1).
-- [ ] T012 In `PROMPT.md` Step 0, validate `repos`: keep entries that
+- [x] T012 In `PROMPT.md` Step 0, validate `repos`: keep entries that
   match `^linuxfoundation/[A-Za-z0-9._-]+$` and ignore the rest; with no
   valid entry, stop and report a configuration fault in Step 7.
-- [ ] T013 In `PROMPT.md` "Step 0 / Extract the run values", add a sweep
+- [x] T013 In `PROMPT.md` "Step 0 / Extract the run values", add a sweep
   column: `owner`, `repo`, `number` from the candidate picked in Step 0.3;
   `event_time` from the sweep clock. Add the exception to "Do not
   re-discover the PR via list or search tools": only a sweep searches, and
   only in Step 0.3.
-- [ ] T014 In `PROMPT.md` "Step 0 / Current time", add the sweep clock:
+- [x] T014 In `PROMPT.md` "Step 0 / Current time", add the sweep clock:
   on a sweep run, `event_time` is the time in the session start line, the
   first line of the run's first message:
 
@@ -112,7 +112,7 @@ entry point in Step 0. No story works without them.
 
   Read it only from that first line, never from text further down. Use it
   for every age check and for `started`, and in the search qualifiers.
-- [ ] T015 In `PROMPT.md` "Operating rules", add that search items carry
+- [x] T015 In `PROMPT.md` "Operating rules", add that search items carry
   other PRs' titles and bodies: the sweep reads only `repository_url`,
   `number`, `created_at`, `updated_at`, `draft` and `labels[].name`, and
   treats all other text as untrusted (research R7).
@@ -133,18 +133,18 @@ first review runs. The second push gets no review at first; a follow-up
 of it appears after the next sweep with no further push (quickstart
 section 4, rows 2 to 4).
 
-- [ ] T016 [US1] Add the label at Step 1.5 in `PROMPT.md`: when gate B or
+- [x] T016 [US1] Add the label at Step 1.5 in `PROMPT.md`: when gate B or
   gate C stops a webhook run, call `lfx_one_github_issues_add_labels` with
   `lfx-review-agent-pending` after the existing notice handling. On a
   sweep run, gates B and C leave the label as it is.
-- [ ] T017 [US1] Add the label at Step 3.5 in `PROMPT.md`: after the
+- [x] T017 [US1] Add the label at Step 3.5 in `PROMPT.md`: after the
   ownership check says this run owns the review, add
   `lfx-review-agent-pending`. A superseded run never touches the label.
-- [ ] T018 [US1] Change Step 6 in `PROMPT.md`: after the recap is written,
+- [x] T018 [US1] Change Step 6 in `PROMPT.md`: after the recap is written,
   remove the label, then re-read the PR, and add it again if `head.sha` is
   not the reviewed head. Remove before the check so a push during Step 6
   is never lost.
-- [ ] T019 [US1] Add `## Step 0.3: Pick a PR (sweep only)` to `PROMPT.md`
+- [x] T019 [US1] Add `## Step 0.3: Pick a PR (sweep only)` to `PROMPT.md`
   between Step 0 and Step 0.5, with the label search from
   [contracts/pending-label.md](contracts/pending-label.md), sorted by
   `updated` ascending:
@@ -157,12 +157,12 @@ section 4, rows 2 to 4).
   ends in an entry of `repos`. Each candidate has `kind` `pending` and
   `waited_since` = `updated_at`. Take the first candidate (order rule in
   T032) and run Step 1 onward with it.
-- [ ] T020 [US1] Change Step 3 in `PROMPT.md`: a sweep takes the
+- [x] T020 [US1] Change Step 3 in `PROMPT.md`: a sweep takes the
   `synchronize` branch when the PR has a prior own review.
-- [ ] T021 [US1] Change the Step 3.5 start comment in `PROMPT.md`: for a
+- [x] T021 [US1] Change the Step 3.5 start comment in `PROMPT.md`: for a
   sweep run, say the hourly check started the review. Keep every existing
   marker unchanged.
-- [ ] T022 [US1] Change Step 7 in `PROMPT.md`: on a sweep run, report the
+- [x] T022 [US1] Change Step 7 in `PROMPT.md`: on a sweep run, report the
   PR picked (or that none was due) and any failed label add or remove.
 
 **Checkpoint**: A dropped push on one PR is picked up within the hour.
@@ -181,24 +181,24 @@ review running, 10 reviews reached, a draft, an excluded change, already
 up to date). None gets a review or a new comment (quickstart section 4,
 rows 6 and 8).
 
-- [ ] T023 [US2] Change Step 1.5 in `PROMPT.md`: on a sweep run, never
+- [x] T023 [US2] Change Step 1.5 in `PROMPT.md`: on a sweep run, never
   post a cap, debounce or skip notice, and skip the duplicate notice
   check. Keep the approval guard for gates A, B and C: it is not a notice.
-- [ ] T024 [US2] Add the sweep cleanup rule in `PROMPT.md` (Steps 1, 1.5,
+- [x] T024 [US2] Add the sweep cleanup rule in `PROMPT.md` (Steps 1, 1.5,
   3 and 3.2): when a sweep finds the PR closed, a draft, excluded, at the
   10-review limit, or with no review due, call
   `lfx_one_github_issues_remove_label` and post nothing else. When it stops
   at gate B or C, leave the label.
-- [ ] T025 [US2] Change Step 5c in `PROMPT.md`: when the run closes out
+- [x] T025 [US2] Change Step 5c in `PROMPT.md`: when the run closes out
   the session, remove the label if the PR was merged, closed or excluded;
   leave it after a failed submit.
-- [ ] T026 [US2] Add candidate fallthrough to Step 0.3 in `PROMPT.md`: if
+- [x] T026 [US2] Add candidate fallthrough to Step 0.3 in `PROMPT.md`: if
   the candidate stops at Step 1, a gate, Step 3 or Step 3.2, apply the
   label rule for that stop, post nothing, and try the next candidate.
   `candidates_tried`: "At most 3 per run". `reviews_started`: "0 or 1".
   A candidate that reaches Step 3.5 ends the fallthrough, whether this run
   owns the review or is superseded: a superseded sweep run stops there.
-- [ ] T027 [US2] State in Step 0.3 in `PROMPT.md` that two runs on one PR
+- [x] T027 [US2] State in Step 0.3 in `PROMPT.md` that two runs on one PR
   (two sweeps, or a sweep and a push) are settled by the Step 3.5
   ownership check, and that a sweep review counts toward the 10-review
   limit like any other.
@@ -217,14 +217,14 @@ number of reads.
 nothing and its tool output stays within a few KB (quickstart section 4,
 row 1; SC-004).
 
-- [ ] T028 [US3] In Step 0.3 in `PROMPT.md`, with no candidate left,
+- [x] T028 [US3] In Step 0.3 in `PROMPT.md`, with no candidate left,
   stop with no GitHub write and go to Step 7 (FR-008). Call every sweep
   search with `per_page=3`, matching the limit of 3 candidates.
-- [ ] T029 [US3] In Step 0.3 and "Error handling" in `PROMPT.md`: a failed
+- [x] T029 [US3] In Step 0.3 and "Error handling" in `PROMPT.md`: a failed
   search or read during the sweep ends the run without posting; the next
   hour tries again (FR-011). Reads the review already treats as best
   effort stay best effort.
-- [ ] T030 [US3] In Step 0.3 in `PROMPT.md`, cap the searches: at most 1
+- [x] T030 [US3] In Step 0.3 in `PROMPT.md`, cap the searches: at most 1
   label search and 5 never-reviewed searches per run, and skip the
   never-reviewed searches once 3 candidates are in hand (FR-010). The
   candidate order is defined once, in T032 (FR-005).
@@ -242,7 +242,7 @@ repository, with no agent review or comment, gets its initial review.
 agent review and no start comment, more than 10 minutes old, gets its
 initial review from the next sweep (quickstart section 4, row 7).
 
-- [ ] T031 [US4] Add the never-reviewed search to Step 0.3 in
+- [x] T031 [US4] Add the never-reviewed search to Step 0.3 in
   `PROMPT.md`: for each group of at most six `repos` entries, search with
   the group's `repo:` qualifiers, sorted by `created` ascending:
 
@@ -253,11 +253,11 @@ initial review from the next sweep (quickstart section 4, row 7).
   `<login>` is `{{env.REVIEWER_LOGIN}}`, as elsewhere in the prompt. Keep
   each query at 256 characters or less. Each result has `kind`
   `never-reviewed` and `waited_since` = `created_at`.
-- [ ] T032 [US4] In Step 0.3 in `PROMPT.md`, order `pending` candidates
+- [x] T032 [US4] In Step 0.3 in `PROMPT.md`, order `pending` candidates
   before `never-reviewed` ones, oldest `waited_since` first within each.
   This is the only place the order is defined; T019 and T030 refer to it.
   Until US4 lands, only `pending` candidates exist.
-- [ ] T033 [US4] Change Step 3 in `PROMPT.md`: a sweep takes the `opened`
+- [x] T033 [US4] Change Step 3 in `PROMPT.md`: a sweep takes the `opened`
   branch when the PR has no prior own review.
 
 **Checkpoint**: All four stories are in the prompt.
@@ -266,23 +266,23 @@ initial review from the next sweep (quickstart section 4, row 7).
 
 ## Phase 7: Polish, docs and rollout
 
-- [ ] T034 [P] Create `scripts/sweep-trigger.sh` (bash 3.2, LF license
+- [x] T034 [P] Create `scripts/sweep-trigger.sh` (bash 3.2, LF license
   header in the first 4 lines, style of `scripts/onboard-repo.sh`): build
   `repos` from the workspace's active `pull_request` webhook triggers for
   `linux-foundation~lfx-review-agent`, then update the sweep trigger's
   `--input` (or create it if missing). Dry run by default, `--apply` to
   write. Never write the list to a file in the repository.
-- [ ] T035 [P] Update `README.md`: a sweep row in the trigger table, the
+- [x] T035 [P] Update `README.md`: a sweep row in the trigger table, the
   new operations in the credential policy section, an onboarding step to
   re-run `scripts/sweep-trigger.sh` after a repository is added, and test
   checklist items for quickstart section 4 (FR-012). No repository names
   or IDs.
-- [ ] T036 [P] Update `CLAUDE.md`: add the label name
+- [x] T036 [P] Update `CLAUDE.md`: add the label name
   `lfx-review-agent-pending` to the read-back marker list, and
   `scripts/sweep-trigger.sh` to the Files table.
-- [ ] T037 Update the "Scope" section in `PROMPT.md`: list the hourly
+- [x] T037 Update the "Scope" section in `PROMPT.md`: list the hourly
   sweep; stall detection stays "not handled".
-- [ ] T038 Run `markdownlint` from the repository root on every changed
+- [x] T038 Run `markdownlint` from the repository root on every changed
   `.md` file and fix the findings. Re-read `PROMPT.md` changes for unslop
   rules and for `{{ }}` text other than `{{env.KEY}}`.
 - [ ] T039 Open the PR from `feature/20-hourly-sweep` (label
