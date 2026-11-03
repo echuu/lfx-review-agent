@@ -151,7 +151,9 @@ PR event, so do it last.
    or branch protection accepts, with write access. Without it, the
    agent's approvals are advisory.
 4. **Triggers.** Run `scripts/onboard-repo.sh` for the repository, then
-   `scripts/sweep-trigger.sh --apply` so the hourly sweep covers it. See
+   `scripts/sweep-trigger.sh --apply` so the hourly sweep covers it. The
+   sweep checks up to 30 repositories for PRs that never got a review;
+   past that, raise the search limit in `PROMPT.md` Step 0.3. See
    Triggers.
 
 No agent, prompt, or credential policy change is needed. The review

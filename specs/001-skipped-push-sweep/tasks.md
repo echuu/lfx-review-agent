@@ -219,13 +219,14 @@ row 1; SC-004).
 
 - [x] T028 [US3] In Step 0.3 in `PROMPT.md`, with no candidate left,
   stop with no GitHub write and go to Step 7 (FR-008). Call every sweep
-  search with `per_page=3`, matching the limit of 3 candidates.
+  search with `per_page=3` (the pending search uses 10), matching the
+  limit of 3 candidates.
 - [x] T029 [US3] In Step 0.3 and "Error handling" in `PROMPT.md`: a failed
   search or read during the sweep ends the run without posting; the next
   hour tries again (FR-011). Reads the review already treats as best
   effort stay best effort.
 - [x] T030 [US3] In Step 0.3 in `PROMPT.md`, cap the searches: at most 1
-  label search and 5 never-reviewed searches per run, and skip the
+  label search and 3 never-reviewed searches per run, and skip the
   never-reviewed searches once 3 candidates are in hand (FR-010). The
   candidate order is defined once, in T032 (FR-005).
 

@@ -54,9 +54,14 @@ Measured on 2026-11-02:
 
 - A search for the 13 open PRs that `lfx-one` reviewed on lfx-self-serve
   returned about 100 KB, because each search item carries the PR body.
-- GitHub limits a search query to 256 characters, which fits about six
-  `repo:linuxfoundation/<name>` qualifiers. 29 repositories need about five
-  searches.
+- GitHub's 256-character query limit does not count qualifiers. Measured
+  2026-11-03: queries of 340 characters (6 `repo:` qualifiers) and 544
+  characters (11) both worked. A query fails with 422 when the token cannot
+  see any one of its repositories, so the sweep keeps groups of up to 10
+  to limit the damage: 29 repositories take 3 searches.
+- Two searches a second apart hit GitHub's secondary rate limit (403) once
+  during testing. So only a failed pending search ends a sweep; a failed
+  never-reviewed search drops the rest of them.
 - Search items don't carry the head SHA. Telling whether a reviewed PR is
   behind takes a PR read and a review-list read per candidate, and the
   review bodies are long.
@@ -134,15 +139,15 @@ release on 2026-11-03).
   scoped to `repo:` worked, alone and with three `repo:` qualifiers.
 - The agent runs as `lfx-one`, so its results may differ.
 - **Decision**: Design user-qualifier searches as repository-scoped groups
-  of at most six repositories. Test with the `lfx-one` credential before
+  of at most ten repositories (R3). Test with the `lfx-one` credential before
   relying on them (quickstart step 2).
 
 ## R5. Never-reviewed PRs (User Story 4)
 
-- **Decision**: For each group of six repositories, search
+- **Decision**: For each group of up to ten repositories, search
   `is:pr is:open draft:false -reviewed-by:lfx-one -commenter:lfx-one
   created:>=<7 days ago> updated:<=<10 minutes ago>`, sorted by
-  `created` ascending, with `per_page=3`.
+  `created` ascending, with `per_page=3` (R3 has the group size).
 - **Rationale**: A PR the agent never reviewed or commented on is a PR
   whose first run never started: an outage or a budget stop. PRs the agent
   stopped on purpose carry a comment (an exclusion notice, a skip notice, a
@@ -191,3 +196,8 @@ release on 2026-11-03).
 - Candidate fallthrough: when the first candidate stops at a gate, the
   sweep may try the next, up to three, so one blocked PR doesn't waste the
   hour.
+- Loops: abandoned reviews don't count toward the 10-review limit, so a PR
+  whose review keeps crashing or failing to submit could get a full review
+  every hour. A failed submit removes the label, and a sweep stops on a PR
+  with 2 or more abandoned reviews since its last summary. One crash still
+  gets one retry from the sweep.

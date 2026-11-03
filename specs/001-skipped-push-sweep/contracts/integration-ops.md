@@ -17,8 +17,9 @@ to the README credential policy. The existing 17 operations are unchanged.
   prompt treats that as success.
 - Label calls are best effort: a failure never stops a review. Step 7
   reports it.
-- `search_issues` is read only. The sweep uses at most 1 label search and 5
-  never-reviewed searches per run, each with `per_page=3`.
+- `search_issues` is read only. The sweep uses at most 1 label search
+  (`per_page=10`) and 3 never-reviewed searches (`per_page=3`, up to 10
+  `repo:` qualifiers each) per run.
 
 ## Credential policy
 

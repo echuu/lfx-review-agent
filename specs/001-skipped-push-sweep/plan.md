@@ -45,10 +45,10 @@ linux-foundation` for new operations; the README checklist and
 **Performance Goals**: A dropped push reviewed within 75 minutes (SC-001).
 An idle sweep run's tool output within a few KB (SC-004).
 
-**Constraints**: At most one review per sweep run and at most 3
-candidates tried. Search queries of 256 characters or less (about six
-`repo:` qualifiers). No repository list, workspace ID or credential ID in
-the public repository. The clock is the session start line (research R2).
+**Constraints**: At most one review per sweep run and at most 3 candidates
+tried. At most 4 searches per run, the never-reviewed ones with up to 10
+`repo:` qualifiers each. No repository list, workspace ID or credential ID
+in the public repository. The clock is the session start line (research R2).
 
 **Scale/Scope**: 720 sweep runs a month; at most 24 sweep reviews a day.
 
@@ -89,7 +89,7 @@ Re-checked after design: no violations, so no Complexity Tracking entries.
 2. Run the label search
    ([contracts/pending-label.md](contracts/pending-label.md)), then,
    unless 3 candidates are in hand, the never-reviewed search (R5) in
-   groups of six repositories. Keep only items in `repos`. Read only
+   groups of up to ten repositories. Keep only items in `repos`. Read only
    structured fields (R7).
 3. Order the candidates (data-model.md) and take the first. Run Step 1
    onward with it.
