@@ -156,7 +156,9 @@ minutes old. Confirm the next sweep runs its initial review.
   run that is still going: the sweep skips it, as the existing gates do.
 - A review run crashed and left a start comment older than 45 minutes: the
   sweep treats it as abandoned, the same way a push does, and can start a
-  new review.
+  new review. If that review dies too, the next sweep posts one stalled
+  notice asking for a human review and leaves the PR for the next push
+  (FR-013).
 - The sweep's search or a read fails: the sweep ends without posting.
   The next hour tries again.
 - Many PRs are behind at once (for example after an outage): one is
@@ -198,7 +200,7 @@ minutes old. Confirm the next sweep runs its initial review.
   any other comment, on a PR it skips at a gate or because no review is
   due. It may clear the mark that says a review is owed. An exclusion
   match behaves as it does on a push: the exclusion notice is posted, and
-  an earlier approval is revoked.
+  an earlier approval is revoked. The one other exception is FR-013.
 - **FR-010**: The sweep MUST bound its reads: it checks a fixed maximum
   number of candidate PRs per run.
 - **FR-011**: A failed read during the sweep MUST end the run without
@@ -207,6 +209,11 @@ minutes old. Confirm the next sweep runs its initial review.
 - **FR-012**: The new schedule and the tool the sweep needs MUST be
   documented in the README with the trigger setup and credential policy,
   like the existing webhook triggers.
+- **FR-013**: When the sweep skips a PR because its reviews keep dying (2
+  or more abandoned reviews since its last summary), it MUST post one
+  notice asking for a human review, unless one is already newer than that
+  summary. The next push after the notice MUST NOT be debounced. Added
+  after lfx-self-serve#4962, whose runs overflowed the model context.
 
 ### Key Entities
 

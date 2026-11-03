@@ -93,8 +93,9 @@ Re-checked after design: no violations, so no Complexity Tracking entries.
    structured fields (R7).
 3. Order the candidates (data-model.md) and take the first. Run Step 1
    onward with it.
-4. If it stops at Step 1, a gate or Step 3, post nothing, apply the label
-   rule for that stop, and try the next candidate, up to 3.
+4. If it stops at Step 1, a gate or Step 3, post nothing (except the
+   stalled notice, FR-013), apply the label rule for that stop, and try
+   the next candidate, up to 3.
 5. With no candidate left, stop and report that none was due.
 
 ### Changes to existing steps

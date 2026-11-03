@@ -412,6 +412,14 @@ Run these on a throwaway PR before enabling triggers on a real repository.
 20. Sweep, never reviewed: in an onboarded repository, with a non-draft PR
     under 7 days old that has no agent review or comment and has been
     quiet for 10 minutes, confirm the next sweep runs its initial review.
+21. Sweep, reviews keep dying: on a PR with 2 abandoned reviews since its
+    last summary and the pending label, confirm the sweep posts one
+    `lfx-review-agent:stalled` notice and removes the label. Put the label
+    back and confirm the next sweep posts no second notice. Push within 5
+    minutes of the notice and confirm a review starts (no debounce).
+22. Tail read: on a PR with more than 10 reviews, confirm the Step 5c
+    `pulls_list_reviews` calls use `per_page: 10` from page
+    `floor(review_count / 10) + 1`, not page 1.
 
 ## Ideas
 

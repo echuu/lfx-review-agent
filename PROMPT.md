@@ -290,8 +290,9 @@ search every hour.
    run Step 1 onward. Start each candidate fresh: carry nothing from an
    earlier one except `event_time` and `repos`.
 4. If the candidate stops at Step 1, a gate in Step 1.5, or Step 3, apply
-   the "Pending label" rule for that stop, post nothing, and take the next
-   candidate, up to 3 in all. Any other outcome ends the run: a review,
+   the "Pending label" rule for that stop, post nothing (except the
+   stalled notice from Step 1.5), and take the next candidate, up to 3 in
+   all. Any other outcome ends the run: a review,
    an exclusion notice from Step 3.2 or the approval guard, or a stop at
    Step 3.5. With no candidate left, report that none was due.
 
@@ -388,13 +389,16 @@ text. A comment matches at most one class, first match wins:
 4. **`skip-notice`**: body contains
    `<!-- lfx-review-agent:skip comment=<id> -->`. A short reply to one
    `re-review` request that a gate skipped (see "Skip notice" below).
-5. **`abandoned`**: body contains
+5. **`stalled-notice`**: body contains
+   `<!-- lfx-review-agent:stalled -->`. Posted by a sweep that stops
+   because the PR's reviews keep dying (see "Apply gates").
+6. **`abandoned`**: body contains
    `<!-- lfx-review-agent:abandoned review=N started=<ISO-8601> -->`. A
    start comment that a later run found orphaned and closed out (Step
    3.5), or that its own run closed out because the PR was merged or
    closed mid-review, or because GitHub kept failing the submit (Step
    5c). It carries no session marker.
-6. **`session-start`**: body contains a session marker
+7. **`session-start`**: body contains a session marker
    `<!-- lfx-review-agent:session review=N started=<ISO-8601> -->`
    and contains none of the summary signals: the summary marker
    `<!-- lfx-review-agent:summary -->`, the footer text
@@ -402,9 +406,9 @@ text. A comment matches at most one class, first match wins:
    preview line `*➡️ This auto-review agent is a preview.` (summaries
    from version 0.1.11 and earlier). This is an in-progress review: the
    start comment was posted and the recap has not been appended yet.
-7. **`session-summary`**: body contains a session marker **and** at least
+8. **`session-summary`**: body contains a session marker **and** at least
    one summary signal. This is a completed review report.
-8. **`other`**: any remaining own comment (manual notes, etc.).
+9. **`other`**: any remaining own comment (manual notes, etc.).
 
 Parse every session marker (`session-start` and `session-summary`):
 
@@ -440,8 +444,8 @@ Parse every session marker (`session-start` and `session-summary`):
   3.5 closes them out. A run that hung or failed to submit without
   producing a review is not a review round, so it does not use up the cap
   of 10.
-- Debounce notices, cap notices and skip notices do **not** count as
-  attempts.
+- Debounce notices, cap notices, skip notices and stalled notices do
+  **not** count as attempts.
 
 ### Apply gates, in this order
 
@@ -452,8 +456,21 @@ also stops, before gate A0, when the PR has 2 or more own `abandoned`
 comments and `abandoned_starts` in total that are newer than its most
 recent `session-summary` (or with no summary): its reviews keep dying, so
 the sweep leaves it for the next push. Run the approval guard (below)
-before this stop, as for gates A, B and C. Then remove the pending label;
-this is a gate stop for Step 0.3.
+before this stop, as for gates A, B and C. Then, unless the PR already
+has a `stalled-notice` newer than that summary (any `stalled-notice`
+counts when the PR has no summary), post one notice via
+`lfx_one_github_issues_create_comment`, so the author is not left with a
+start comment that never finishes:
+
+```text
+<!-- lfx-review-agent:stalled -->
+@<login> My last <K> reviews of this pull request stopped before they could post a report, so no review was posted. This can happen when the pull request or its review history is too large for one review run. A human review is needed. The next push starts another attempt. For help with the review agent, see {{env.REVIEW_AGENT_HELP_URL}}.
+```
+
+`<K>` is the count of `abandoned` comments and `abandoned_starts` that
+triggered this stop. Only a sweep posts this notice, and sweeps run one
+at a time, so no duplicate notice check is needed. If posting fails,
+continue. Then remove the pending label; this is a gate stop for Step 0.3.
 
 **A0. Excluded pull request.** If any own comment is an `exclusion-notice`,
 stop. An earlier run found that this PR touches an area in "Review
@@ -526,7 +543,7 @@ notice on a draft), and Step 3 already stops when HEAD has not moved since
 the last review.
 
 - If it is a `session-summary` (a session marker plus any summary signal
-  from class 7: the summary marker, the footer text, or the legacy preview
+  from class 8: the summary marker, the footer text, or the legacy preview
   line), post one debounce notice via `lfx_one_github_issues_create_comment`,
   run the duplicate notice check (below), and stop. Link the report
   (`html_url` of that most-recent summary comment):
@@ -548,6 +565,9 @@ the last review.
   that was closed out without posting left nothing to debounce, and the
   failed-submit notice from Step 5c tells the author the next event
   starts a new review.
+- If it is a `stalled-notice`, this gate does not apply either; go to
+  gate D. The notice tells the author the next push starts another
+  attempt, so debouncing that push would break its promise.
 
 **D. Otherwise** proceed to Step 2. The in-progress session comment is
 still not posted. That happens in Step 3.5, only if Step 3 decides a
@@ -618,7 +638,8 @@ trigger another run. It is not a session comment, so it does not affect
 
 Call `lfx_one_github_pulls_list_reviews` for the PR and paginate until complete
 (reuse the list from Step 1.5 if it already fetched one).
-Keep the full list for the Step 4 bot reconciliation. Filter to reviews
+Keep the full list for the Step 4 bot reconciliation, and save its length
+as `review_count`. Filter to reviews
 with `user.login == "{{env.REVIEWER_LOGIN}}"` **and** a `body` containing
 `<!-- lfx-review-agent:review -->` (added by 5c to every formal review).
 The credential can be shared with other tools or agents that post as the
@@ -1440,8 +1461,14 @@ label. Then go to Step 7.
 
 **Check for an exclusion.** Another run can exclude the PR while this one
 reviews (Step 1.5 approval guard), for example after the base branch is
-retargeted. Call `lfx_one_github_issues_list_comments` and
-`lfx_one_github_pulls_list_reviews`, and paginate both until complete. The
+retargeted. Call `lfx_one_github_issues_list_comments` and paginate until
+complete. Read the reviews with a **tail read**: call
+`lfx_one_github_pulls_list_reviews` with `per_page: 10` and `page:
+floor(review_count / 10) + 1`, then each next page until one returns
+fewer than 10 reviews. GitHub lists reviews oldest first and a submitted
+review cannot be deleted, so every review submitted since Step 2 is on
+those pages. Do not read the full list again: on a busy PR it runs to
+hundreds of KB, and a second copy can overflow this run's context. The
 PR is excluded if an own comment (`user.login ==
 "{{env.REVIEWER_LOGIN}}"`) is an `exclusion-notice`, or if an own review
 whose `body` contains `<!-- lfx-review-agent:excluded` has `submitted_at`
@@ -1522,7 +1549,7 @@ most 4 `lfx_one_github_pulls_create_review` calls in total, counting the
 422 retry. A server error can still create the review, so before each
 retry:
 
-1. Call `lfx_one_github_pulls_list_reviews` and paginate until complete.
+1. Do a tail read of the reviews, as in the exclusion check above.
    If an own review (`user.login == "{{env.REVIEWER_LOGIN}}"`) carries
    `<!-- lfx-review-agent:review-of review=<N> -->` with this run's `N`,
    the failed call created it. Do not submit again; go to Post-submit
@@ -1558,8 +1585,8 @@ in Step 1.5 gate B applies. Remove the pending label. Then go to Step 7.
 ### Post-submit verification (required)
 
 Read back the response's `state` and `html_url`. If not captured, re-fetch
-via `lfx_one_github_pulls_list_reviews` and take the most recent own review that
-carries the review marker. Confirm `state` matches the event submitted
+with a tail read of the reviews (5c) and take the most recent own review
+that carries the review marker. Confirm `state` matches the event submitted
 (`APPROVED`, `CHANGES_REQUESTED`, or `COMMENTED` for an approval-withheld
 or `head_moved` review). If an
 approve or request-changes verdict reads back as `COMMENTED`, the wrong
@@ -1773,8 +1800,9 @@ the number of attempts and the last error, link the PR and the
 closed-out session comment, and say whether the comment update succeeded.
 
 For a `sweep`, also list each candidate tried, why each one stopped, and
-whether its pending label was removed. A sweep with no candidate reports
-`Sweep: no pull request due`. Report every failed label call.
+whether its pending label was removed. Link any stalled notice it
+posted. A sweep with no candidate reports `Sweep: no pull request due`.
+Report every failed label call.
 
 ## Error handling
 

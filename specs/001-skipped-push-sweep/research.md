@@ -221,3 +221,12 @@ credential, 2026-11-03):
   every hour. A failed submit removes the label, and a sweep stops on a PR
   with 2 or more abandoned reviews since its last summary. One crash still
   gets one retry from the sweep.
+- Stalled notice (added 2026-11-03 after lfx-self-serve#4962): that stop
+  used to post nothing, which left the author with a start comment that
+  never finished. Review 5 there died with "prompt is too long: 1041163
+  tokens > 1000000 maximum", and each retry would hit the same limit. The
+  stop now posts one `lfx-review-agent:stalled` notice per streak (none
+  while one is newer than the last summary) asking for a human review.
+  Gate C lets the next push through instead of debouncing it. In the same
+  run, Step 5c re-read the full review list (179 KB) where review 4 had
+  read one empty page; 5c now does a tail read from `review_count`.

@@ -38,7 +38,8 @@ through `.git/info/exclude`. Never commit them.
   policy.
 - Comment and review markers (`<!-- lfx-review-agent:review -->`,
   `:review-of`, `:session`, `:superseded`, `:cap`, `:debounce`, `:skip`,
-  `:request`, `:abandoned`, `:approval-withheld`, `:excluded`, `:summary`)
+  `:request`, `:abandoned`, `:approval-withheld`, `:excluded`, `:summary`,
+  `:stalled`)
   are read back by later runs. Changing one breaks cycle state on open PRs.
   The same holds for the `lfx-review-agent-pending` label and the
   `lfx_review_agent_event` sweep input key.

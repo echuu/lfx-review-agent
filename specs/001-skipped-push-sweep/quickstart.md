@@ -73,7 +73,7 @@ Skipping step 1 or 2 makes the save fail, as it did for 0.1.15.
 | Push during Step 6 | Step 6 removes the label, sees the head moved, adds it back; the next sweep reviews. |
 | Run crashes after Step 3.5 | The label stays; a sweep at least 45 minutes later closes out the start and reviews. |
 | PR at the 10-review limit with the label | The sweep removes the label and posts nothing. |
-| Review crashes again after the sweep's retry | The sweep sees 2 abandoned reviews, removes the label and posts nothing; the next push starts a review. |
+| Review crashes again after the sweep's retry | The sweep sees 2 abandoned reviews, posts one stalled notice (none if one is already newer than the last summary), removes the label; the next push starts a review without a debounce. |
 | One never-reviewed search fails (403 or 422) | The sweep keeps the pending candidates, skips the other never-reviewed searches, and reports the failure. |
 | PR opened during an outage, no agent comment | The sweep runs its initial review within the hour, if it's under 7 days old. |
 | Same PR picked by a sweep and a push | One review; the other run is superseded (Step 3.5). |

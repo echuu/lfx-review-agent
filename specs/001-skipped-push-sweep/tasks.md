@@ -303,6 +303,12 @@ initial review from the next sweep (quickstart section 4, row 7).
 - [ ] T044 Check the first sweep sessions against quickstart section 4
   and update the memory file with the live state (agent 0.1.18,
   integration 1.0.5).
+- [x] T045 Add the stalled notice (FR-013) to Step 1.5 in `PROMPT.md`: a
+  new `stalled-notice` comment class, one notice per streak at the
+  sweep's abandoned-reviews stop, and a gate C exception. Change the Step
+  5c review re-reads to a tail read from `review_count`. Update T024 and
+  T026 behavior, the README checklist, `CLAUDE.md` markers, and
+  quickstart section 4. Found on lfx-self-serve#4962.
 
 ---
 
