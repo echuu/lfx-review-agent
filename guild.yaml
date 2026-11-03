@@ -6,12 +6,12 @@
 # Only the GitHub operations PROMPT.md calls are listed. The integration is
 # the custom lfx-one-github one, which acts as the lfx-one account. It is
 # pinned so a new release cannot rename or reshape a tool under the agent.
-# The agent runs unattended from webhook triggers, so it takes no `ui`
+# The agent runs unattended from webhook and time triggers, so it takes no `ui`
 # builtins.
 
 integrations:
   - name: linux-foundation~lfx-one-github
-    version: "1.0.4"
+    version: "1.0.5"
     tools:
       - lfx_one_github_pulls_get
       - lfx_one_github_pulls_list_files
@@ -30,5 +30,8 @@ integrations:
       - lfx_one_github_repos_get_branch_rules
       - lfx_one_github_checks_list_for_ref
       - lfx_one_github_repos_get_combined_status
+      - lfx_one_github_search_issues
+      - lfx_one_github_issues_add_labels
+      - lfx_one_github_issues_remove_label
 sub_agents: []
 builtins: []

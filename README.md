@@ -60,6 +60,14 @@ It runs from GitHub webhook events delivered by Guild: `pull_request`
 triggers are deactivated for now to save cost; see the Triggers section
 below.
 
+An hourly Guild time trigger also starts a sweep. It reviews at most one
+PR an hour that is owed a review: a push dropped because a review was
+running or the agent had just commented, a review that did not finish, or
+a PR opened in the last 7 days that never got one. The agent marks PRs
+that may be owed a review with the label `lfx-review-agent-pending` and
+removes it when a review finishes on the current head. Removing it by hand
+only takes that PR out of the sweep. Never rename it: open PRs carry it.
+
 ## Repository
 
 GitHub (`linuxfoundation/lfx-review-agent`) is the source of truth and the
@@ -90,6 +98,10 @@ webhook's own timestamp as "now" for the whole run: `pull_request.updated_at`
 for `opened` / `synchronize` / `ready_for_review`, and `comment.created_at`
 for `re-review`. That value drives the Step 1.5 age checks and the `started`
 field in Step 3.5.
+
+A sweep has no webhook. It reads "now" from the first line Guild writes in
+every session, `* This session was started at HH:MM:SS (24h, UTC) on
+...`, confirmed by a probe run on 2026-11-03.
 
 ### Fallback: custom time integration
 
@@ -138,7 +150,10 @@ PR event, so do it last.
 3. **CODEOWNERS.** Add `lfx-one` to the team the repository's CODEOWNERS
    or branch protection accepts, with write access. Without it, the
    agent's approvals are advisory.
-4. **Triggers.** Run `scripts/onboard-repo.sh` for the repository. See
+4. **Triggers.** Run `scripts/onboard-repo.sh` for the repository, then
+   `scripts/sweep-trigger.sh --apply` so the hourly sweep covers it. The
+   sweep checks up to 30 repositories for PRs that never got a review;
+   past that, raise the search limit in `PROMPT.md` Step 0.3. See
    Triggers.
 
 No agent, prompt, or credential policy change is needed. The review
@@ -171,6 +186,7 @@ must be unique within the workspace.
 | `pull_request` | `synchronize` | `lfx-review-agent <repo> synchronize` | a follow-up review after a push |
 | `pull_request` | `ready_for_review` | `lfx-review-agent <repo> ready_for_review` | the review of a PR that was a draft |
 | `issue_comment` | `created` | `lfx-review-agent <repo> re-review comment` | a review on `@lfx-one re-review` (deactivated, not created by the script) |
+| time, hourly at :17 | | `lfx-review-agent sweep` (one per workspace) | the sweep (`scripts/sweep-trigger.sh`) |
 
 `scripts/onboard-repo.sh` creates them. It takes one or more repository
 names, checks them all before creating anything, and skips any trigger
@@ -190,6 +206,26 @@ place.
 When the agent starts handling another event, add it to `TRIGGERS` in
 `scripts/onboard-repo.sh` and to the table above, then rerun the script
 for every onboarded repository. It creates only the missing trigger.
+
+The sweep is one time trigger for the whole workspace. Its input is
+`{"lfx_review_agent_event": "sweep", "repos": [...]}`, and
+`scripts/sweep-trigger.sh` builds `repos` from the active `synchronize`
+triggers, so the list never goes into this repository. Without `--apply`
+it only prints what it would do. It updates the existing trigger in place,
+keeping its active or inactive state, or creates it when there is none
+(a new trigger starts active). When no `synchronize` trigger is left, it
+deactivates the sweep instead. Guild has no trigger delete; use
+`guild trigger deactivate <id>` to stop the sweep. When a repository
+leaves the review, rerun the script and delete the
+`lfx-review-agent-pending` label in that repository. The sweep removes the
+label from pull requests outside its list, but only while the token can
+still reach them.
+
+```bash
+WS=<workspace-id> scripts/sweep-trigger.sh            # dry run
+WS=<workspace-id> scripts/sweep-trigger.sh --apply
+guild trigger activate <sweep-trigger-id>
+```
 
 Create triggers only for repositories the `lfx-one` token covers. A trigger
 on any other repository fails its first GitHub read, and the session stops
@@ -223,7 +259,7 @@ CRED=<credential-id>   # guild credentials list --owner linux-foundation
 
 guild credentials policy create "$CRED" \
   --decision ALLOW \
-  --operations pulls_get,pulls_list_files,pulls_list_commits,pulls_list_reviews,pulls_list_review_comments,pulls_create_review,issues_list_comments,issues_create_comment,issues_update_comment,issues_create_reaction,repos_compare_commits,repos_get_content,users_get_by_username,repos_get_branch,repos_get_branch_rules,checks_list_for_ref,repos_get_combined_status \
+  --operations pulls_get,pulls_list_files,pulls_list_commits,pulls_list_reviews,pulls_list_review_comments,pulls_create_review,issues_list_comments,issues_create_comment,issues_update_comment,issues_create_reaction,repos_compare_commits,repos_get_content,users_get_by_username,repos_get_branch,repos_get_branch_rules,checks_list_for_ref,repos_get_combined_status,search_issues,issues_add_labels,issues_remove_label \
   --workspaces <workspace-uuid> \
   --agents <agent-uuid>
 
@@ -233,12 +269,19 @@ guild credentials policy delete <allow-all-policy-id>
 
 There is no command to update a policy. To allow a new operation on an
 existing credential, create another `ALLOW` policy with only the new
-operations, for example the CI check reads added in 0.1.15:
+operations, for example the CI check reads added in 0.1.15 and the sweep
+operations added in 0.1.18:
 
 ```bash
 guild credentials policy create "$CRED" \
   --decision ALLOW \
   --operations repos_get_branch,repos_get_branch_rules,checks_list_for_ref,repos_get_combined_status \
+  --workspaces <workspace-uuid> \
+  --agents <agent-uuid>
+
+guild credentials policy create "$CRED" \
+  --decision ALLOW \
+  --operations search_issues,issues_add_labels,issues_remove_label \
   --workspaces <workspace-uuid> \
   --agents <agent-uuid>
 ```
@@ -256,7 +299,7 @@ account, shown as "LFX One [bot]"). Guild's shared `guildai~github`
 integration connects as the Guild GitHub App instead, so this agent uses a
 custom integration, `linux-foundation~lfx-one-github`.
 
-- The integration wraps the 17 GitHub REST operations the agent uses. The
+- The integration wraps the 20 GitHub REST operations the agent uses. The
   OpenAPI spec is `integration/lfx-one-github.openapi.yaml`. The spec
   declares an HTTP bearer security scheme. In Guild the connection uses the
   API Key auth type with the header `Authorization: Bearer {token}`.
@@ -356,6 +399,28 @@ Run these on a throwaway PR before enabling triggers on a real repository.
 16. When two runs post a cap or debounce notice at the same moment, confirm
     the later one is rewritten to the `superseded notice=` marker and the
     earlier one is left as is.
+17. Sweep, dropped push: on a test PR, push while a review is running.
+    Confirm the PR gets `lfx-review-agent-pending`, the next sweep runs a
+    follow-up whose start comment says the hourly check started it, and
+    the label is gone after the recap. Confirm a push during Step 6 leaves
+    the label in place.
+18. Sweep, blocked PRs: put the label on a draft, a PR at 10 reviews, an
+    excluded PR and an up-to-date PR. Confirm the sweep posts nothing on
+    them and removes the label from each.
+19. Sweep, idle hour: with no labeled PR and no never-reviewed PR, confirm
+    the session posts nothing and its tool output is small (one tenth of a
+    follow-up review or less).
+20. Sweep, never reviewed: in an onboarded repository, with a non-draft PR
+    under 7 days old that has no agent review or comment and has been
+    quiet for 10 minutes, confirm the next sweep runs its initial review.
+21. Sweep, reviews keep dying: on a PR with 2 abandoned reviews since its
+    last summary and the pending label, confirm the sweep posts one
+    `lfx-review-agent:stalled` notice and removes the label. Put the label
+    back and confirm the next sweep posts no second notice. Push within 5
+    minutes of the notice and confirm a review starts (no debounce).
+22. Tail read: on a PR with more than 10 reviews, confirm the Step 5c
+    `pulls_list_reviews` calls use `per_page: 10` from page
+    `floor(review_count / 10) + 1`, not page 1.
 
 ## Ideas
 
