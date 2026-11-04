@@ -118,7 +118,7 @@ FR-008, FR-013 to FR-015).
 patch-less file over 100,000 bytes, the file with a patch, the context
 read and rule-file discovery.
 
-- [ ] T012 [US2] In `PROMPT.md` Step 4 "Repository rules", replace the
+- [x] T012 [US2] In `PROMPT.md` Step 4 "Repository rules", replace the
   `repos_get_content` directory listings with `git_get_tree` at
   `base_sha`: the root as `tree_sha: <base_sha>`, `.claude/rules/` as
   `<base_sha>:.claude/rules`, and each top-level directory as
@@ -126,13 +126,13 @@ read and rule-file discovery.
   entries whose `mode` is not `120000`; mode `120000` is a symlink and
   keeps the existing skip-and-name rule. Drop the `path: "."` note.
   Rule-file reads add their sizes to `bytes_read`.
-- [ ] T013 [US2] In `PROMPT.md` Step 4, rewrite the "Large files" and
+- [x] T013 [US2] In `PROMPT.md` Step 4, rewrite the "Large files" and
   "Context" bullets to follow the "Read budget" section: list the
   file's directory with `git_get_tree` at the same ref (reuse listings),
   check the limits, then read; otherwise record the unread file with its
   kind and reason. A changed file with a patch is reviewed from its
   patch; only its whole-file read is skipped.
-- [ ] T014 [US2] In `PROMPT.md` Step 3.2, replace "read it with
+- [x] T014 [US2] In `PROMPT.md` Step 3.2, replace "read it with
   `lfx_one_github_repos_get_content` at both the merge base and
   `head_sha`" with: read it at `head_sha` only, within the read budget.
   Add the research R10 rule for a file left unread: a file on the
@@ -142,7 +142,7 @@ read and rule-file discovery.
   case-insensitive, where name parts are the path split on `/`, `.`, `-`
   and `_`; so `ics.helper.ts` matches and `analytics.ts` does not).
   Keep "when unsure, treat it as a match" for files that were read.
-- [ ] T015 [US2] In `PROMPT.md`, add "### 5a.3. Unread changed files"
+- [x] T015 [US2] In `PROMPT.md`, add "### 5a.3. Unread changed files"
   after 5a.2: run when the verdict would be `APPROVE`. If any unread file
   has kind `changed-no-patch` and is not on the generated-file table,
   withhold approval with the approval-withheld marker and the note from
@@ -152,17 +152,17 @@ read and rule-file discovery.
   the PR keeps a withheld approval until the file leaves the diff or a
   human approves. A `REQUEST_CHANGES` verdict stands. A deleted file is
   never `changed-no-patch`.
-- [ ] T016 [US2] In `PROMPT.md`, extend every place that lists the
+- [x] T016 [US2] In `PROMPT.md`, extend every place that lists the
   approval-withholding gates to include 5a.3: Step 2 terminal reviews
   ("posted by Step 5a.1 or 5a.2"), Step 5c `event` (`COMMENT` only when
   5a.1, 5a.2 or 5a.3 withheld approval) and the review body's second
   line notes, and the Step 7 "Approval withheld" report line.
-- [ ] T017 [US2] In `PROMPT.md` Step 6, add the "Unread files" recap line
-  from [contracts/read-budget.md](contracts/read-budget.md) after the
+- [x] T017 [US2] In `PROMPT.md` Step 6, add the "Unread files" recap line
+  from [contracts/read-budget.md](contracts/read-budget.md) before the
   rule-files line (deleted large files are listed as `deleted`), and
   name withholding files at the top of the summary when 5a.3 withheld
   approval. Update the recap example.
-- [ ] T018 [US2] In `PROMPT.md` "Error handling", add `git_get_tree` and
+- [x] T018 [US2] In `PROMPT.md` "Error handling", add `git_get_tree` and
   full-file reads to the list of reads that never stop a run: a failed
   listing means the size is unknown, so the file is not read (reason
   `size unknown`).

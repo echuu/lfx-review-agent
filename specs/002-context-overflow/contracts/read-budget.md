@@ -48,7 +48,8 @@ A `REQUEST_CHANGES` verdict stands; the summary still names the files.
 
 ## Recap (Step 6)
 
-One line under Details, after the rule files line:
+One line under Details, just before the rule files line (which stays
+last):
 
 ```text
 **Unread files:** `<path>` (<reason>), ...
