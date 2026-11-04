@@ -218,12 +218,12 @@ to output schemas (spec FR-009, FR-010).
 **Independent Test**: quickstart step 2 (the header returns Markdown) and
 step 5 (tool output and tokens on a large follow-up).
 
-- [ ] T024 [US3] In `PROMPT.md`, make every full-file read (rule files,
+- [x] T024 [US3] In `PROMPT.md`, make every full-file read (rule files,
   patch-less changed files, context) pass `Accept:
   "application/vnd.github.raw+json"` to `repos_get_content` (T004), with
   sizes still taken from `git_get_tree`. Say the response is the file's
   text, not JSON.
-- [ ] T025 [US3] In `PROMPT.md` "Tools", note that the history reads
+- [x] T025 [US3] In `PROMPT.md` "Tools", note that the history reads
   may return only the fields listed in the table (output schema). The
   field check itself is part of T006.
 

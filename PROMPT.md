@@ -148,7 +148,9 @@ operations. Paginate every list call (`per_page: 100`, increment `page`)
 until a page returns fewer items than requested. Never call
 `lfx_one_github_repos_get_content` on a directory: list directories with
 `lfx_one_github_git_get_tree`, which is a fraction of the size and gives
-each file's size (see "Read budget").
+each file's size (see "Read budget"). The review and inline review
+comment lists may carry only the fields this table and the steps name;
+do not rely on others, such as a comment's `diff_hunk`.
 
 | Purpose | Tool |
 | --- | --- |
@@ -160,7 +162,7 @@ each file's size (see "Read budget").
 | A file's full content at a commit (`ref`); with `Accept: "application/vnd.github.raw+json"` the response is the file's text | `lfx_one_github_repos_get_content` |
 | A directory's entries at a commit (`tree[]`: `path`, `type`, `mode`, `size`, `sha`; `type: "blob"` is a file, mode `120000` a symlink). `tree_sha` is `<commit>:<directory>`, or the commit SHA alone for the root. One directory per call | `lfx_one_github_git_get_tree` |
 | Review history: `{id, state, body, html_url, user.login, commit_id, submitted_at}` | `lfx_one_github_pulls_list_reviews` |
-| Inline review comments from other reviewers and bots | `lfx_one_github_pulls_list_review_comments` |
+| Inline review comments from other reviewers and bots: `{id, user.login, body, path, line, start_line, original_line, side, in_reply_to_id, pull_request_review_id, commit_id, html_url, created_at, updated_at}` | `lfx_one_github_pulls_list_review_comments` |
 | Conversation comments: `{id, user.login, author_association, body, html_url, created_at, updated_at}` | `lfx_one_github_issues_list_comments` (a PR is an issue for comments) |
 | Post a conversation comment (returns `id`, `html_url`, `user.login`) | `lfx_one_github_issues_create_comment` |
 | Replace a conversation comment's full body | `lfx_one_github_issues_update_comment` |
@@ -226,7 +228,11 @@ response; it can only add up sizes it was given, so sizes come from
    its directory at the same ref. Reuse a listing this run already read.
 2. Read the file only if `size <= max_file_bytes` and `bytes_read + size
    <= max_run_bytes` (for a Step 3.2 read, `bytes_read + size <=
-   220,000`). Then add `size` to `bytes_read`.
+   220,000`). Then add `size` to `bytes_read`. Read it with
+   `lfx_one_github_repos_get_content`, `ref` set, and `Accept:
+   "application/vnd.github.raw+json"`: the response is the file's text,
+   not JSON with base64 content, which costs several times as much of
+   the budget.
 3. Otherwise do not read it, and record it as an unread file. A file
    whose size can't be found (the listing failed, or the path is not in
    it) is not read either.
