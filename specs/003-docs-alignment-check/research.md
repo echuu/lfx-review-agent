@@ -174,12 +174,12 @@ an override; guessing wrong costs at most 2 `[minor]` findings.
 **Dedupe**: before raising a documentation finding on a follow-up,
 compare it with the earlier `[docs]` findings. A finding with the same
 named item (after the R9 escaping) and the same doc path is the earlier
-finding: classify it, do not raise it again. The match holds only when
-the new commits leave that named item alone; a commit that changes it
-again is a new behavior change and gets a new finding. This matters when
-the
-follow-up falls back to the whole PR diff (force-push or merge commit):
-without it, one gap would count as a new `[minor]` and a prior one.
+finding: classify it, do not raise it again. The one exception: when
+the scope is the compare diff of the new commits and that diff changes
+the named item again, it is a new behavior change and gets a new finding.
+On a whole-PR fallback (force-push or merge commit) the match always
+applies: that diff still holds the original change, and without the
+dedupe one gap would count as a new `[minor]` and a prior one.
 
 **Rationale**: FR-043 and FR-040. With carry-forward and no opt-out, a
 rule that needs a read could block a PR whose doc no longer fits the

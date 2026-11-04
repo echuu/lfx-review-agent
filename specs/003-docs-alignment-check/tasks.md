@@ -37,7 +37,7 @@ or quoted text.
 
 ## Phase 1: Setup
 
-- [ ] T001 Create branch `feature/docs-alignment-check` from an updated
+- [X] T001 Create branch `feature/docs-alignment-check` from an updated
   `main`, and commit the `specs/003-docs-alignment-check/` artifacts as
   the first commit (`git commit -S --signoff`, type `docs(spec)`).
 - [ ] T002 [P] (maintainer) Run quickstart section 1 (sandbox
@@ -63,12 +63,12 @@ or quoted text.
 
 ## Phase 2: Foundational (blocks every story)
 
-- [ ] T004 In `PROMPT.md` "Read budget" (line 244, "Order: Step 3.2 reads
+- [X] T004 In `PROMPT.md` "Read budget" (line 244, "Order: Step 3.2 reads
   first, ..."), add documentation reads (Step 4, "Documentation
   candidates") after reads for context. A doc that does not fit is an
   unread file of kind `context` and never produces a finding or withholds
   approval (spec FR-030, FR-034).
-- [ ] T005 In `PROMPT.md` Step 4 "Gather the material", add an item
+- [X] T005 In `PROMPT.md` Step 4 "Gather the material", add an item
   "**Documentation candidates:**" after "Repository rules" (line 1134)
   and before "Other reviewers". It must say:
   - Reuse the root listing and the top-level directory listings the
@@ -84,7 +84,7 @@ or quoted text.
     docs.
   - Free sources: rule files already read, and patches of doc files the
     PR changes. Every other candidate is existence-only (spec FR-033a).
-- [ ] T006 In `PROMPT.md` Step 4 "Review the dimensions", rewrite the
+- [X] T006 In `PROMPT.md` Step 4 "Review the dimensions", rewrite the
   **Documentation** bullet (line 1364) into a short block that keeps
   today's rules (doc comments, typos and generic docs are `[nit]`,
   untagged) and adds:
@@ -108,21 +108,22 @@ or quoted text.
   - A file in "Generated files and lockfiles" is never the source of a
     documentation finding; a stale generated OpenAPI description is a
     finding on its Goa design source.
-- [ ] T007 In `PROMPT.md` Step 5b (line 1623, "Inline comment body"),
+- [X] T007 In `PROMPT.md` Step 5b (line 1623, "Inline comment body"),
   add `[docs]` to the title line after the severity, in the place of
   `[privacy]`, only for missing-docs and misaligned findings. In Step 5c
   `body` and the 422 retry (line 1782), state that findings moved into
   `Findings outside the diff` keep the tag.
-- [ ] T008 In `PROMPT.md` Step 4 "**Follow-up only**" (line 1389), add:
+- [X] T008 In `PROMPT.md` Step 4 "**Follow-up only**" (line 1389), add:
   earlier documentation findings come from own inline comments (the
   reviewer login and `[docs]` in the title line) and own review bodies
   (`Findings outside the diff`, folded item lines); the read-free
   recheck table from research R7; and the dedupe rule: "A gap that
   matches an earlier documentation finding (same named item and same doc
   location) MUST be classified as that earlier finding and MUST NOT be
-  raised again" (spec FR-040, FR-043). The match applies only when the
-  new commits do not change that named item again; a commit that does
-  raises a new finding. Add the maintainer override (spec
+  raised again" (spec FR-040, FR-043). The exception: when the scope is
+  the compare diff of the new commits and it changes the named item
+  again, raise a new finding; on a whole-PR fallback always dedupe. Add
+  the maintainer override (spec
   FR-036): every `[docs]` finding raised in or carried into an own review
   that is now `DISMISSED` (Step 2) and whose session summary (matched by
   `review-of review=<N>` in the Step 1.5 comments) shows the 🔴 decision
@@ -130,12 +131,12 @@ or quoted text.
   dismissed own approval resolves nothing. With no matching summary,
   treat the dismissal as an override. Gaps from later commits are
   new findings.
-- [ ] T009 In `PROMPT.md` Step 5a (line 1423, "Prior `[minor]` items
+- [X] T009 In `PROMPT.md` Step 5a (line 1423, "Prior `[minor]` items
   outside Security do not count toward the `[minor]` total"), add the
   exception: an earlier `[docs]` item still ❌ open or ⚠️ partially
   addressed counts as one `[minor]` on every follow-up until resolved
   (spec FR-042). Keep the five Approve bullets unchanged.
-- [ ] T010 In `PROMPT.md` Step 6 "Recap contents", per
+- [X] T010 In `PROMPT.md` Step 6 "Recap contents", per
   [contracts/summary-call-out.md](contracts/summary-call-out.md):
   - Decision (line 1888): the Documentation gaps line after the 🔴
     sentence and before the 5a notes, whenever the review has a gap; the
@@ -165,7 +166,7 @@ variable named in the root README, README unchanged, confirm one
 `[minor][docs]` finding citing the code line and the README line,
 counted in the `[minor]` tally and on the Documentation gaps line.
 
-- [ ] T011 [US1] In the `PROMPT.md` Documentation block (T006), add the
+- [X] T011 [US1] In the `PROMPT.md` Documentation block (T006), add the
   misaligned check (spec FR-015 to FR-017, FR-004):
   - It runs on every reviewed PR, whatever `change_class` is, docs-only
     PRs included.
@@ -178,7 +179,7 @@ counted in the `[minor]` tally and on the Documentation gaps line.
     not match is a finding, anchored on the doc line, citing the code
     line.
   - Misaligned findings are never folded or capped.
-- [ ] T012 [US1] In the same `PROMPT.md` Documentation block, add the
+- [X] T012 [US1] In the same `PROMPT.md` Documentation block, add the
   US1 edge cases and anchoring: a docs-only PR is still checked against
   the code at `head_sha`; a renamed item that the PR updates in every doc
   that named it yields no finding; a finding on a doc line in the diff
@@ -201,7 +202,7 @@ table, README unchanged, confirm one missing-docs finding. On a `chore:`
 dependency bump, confirm none and no base-doc read in the session
 events.
 
-- [ ] T013 [US2] In the `PROMPT.md` Documentation block, add the
+- [X] T013 [US2] In the `PROMPT.md` Documentation block, add the
   missing-docs check (spec FR-010 to FR-013, FR-033a):
   - Only when `change_class` is not `none`.
   - The four surfaces from spec FR-005, matched against the doc
@@ -216,7 +217,7 @@ events.
     in i18n files is a missing-docs finding on the help surface.
   - Anchoring: on the behavior line when it is in the diff, otherwise
     under `Findings outside the diff` (spec FR-050).
-- [ ] T014 [US2] In the same block, add the cap from research R6 and
+- [X] T014 [US2] In the same block, add the cap from research R6 and
   data-model: "At most 3 `missing` and `missing-none` findings with
   `folded: false`, and at most one `missing-none`". The rest fold into
   one item. In `PROMPT.md` Step 5c `body`, define the folded item format
@@ -240,7 +241,7 @@ review has the reminder in the review body and in Details. Push a
 typo-only commit: no reminder. Push a commit that adds a config key: a
 reminder naming only that key.
 
-- [ ] T015 [US3] In the `PROMPT.md` Documentation block, add the reminder
+- [X] T015 [US3] In the `PROMPT.md` Documentation block, add the reminder
   rule (spec FR-020 to FR-025, research R4):
   - Due when `change_class` is not `none` and at least one named item or
     new surface is not in an earlier reminder.
@@ -252,7 +253,7 @@ reminder naming only that key.
   - The reminder never says a page is missing, wrong or out of date, and
     the agent never fetches external pages. It is not a finding and is
     not counted.
-- [ ] T016 [US3] In `PROMPT.md` Step 5c `body` (line 1764), add the
+- [X] T016 [US3] In `PROMPT.md` Step 5c `body` (line 1764), add the
   Documentation section after the 1 to 2 sentence verdict note and
   before `Findings outside the diff`, in the format from
   [contracts/review-output.md](contracts/review-output.md): `**Documentation**`,
@@ -261,7 +262,7 @@ reminder naming only that key.
   line of the body stays reserved for the approval-withheld marker. A
   `head_moved` `COMMENT` review keeps the section (spec FR-023,
   FR-024).
-- [ ] T017 [US3] In `PROMPT.md` Step 6 Details, add an item
+- [X] T017 [US3] In `PROMPT.md` Step 6 Details, add an item
   "**Documentation reminder:**" after "Unread files" (line 1997) and
   before "Rule files" (line 2012), present only when this round posted a
   reminder. Renumber the Rule files item so it stays last.
@@ -281,7 +282,7 @@ directory and a product page with an owner. On a qualifying PR, confirm
 the directory is a candidate and the reminder names the URL and owner in
 code spans, with no notification.
 
-- [ ] T018 [US4] In `PROMPT.md` "Documentation candidates" (T005), add
+- [X] T018 [US4] In `PROMPT.md` "Documentation candidates" (T005), add
   the declared section from
   [contracts/documentation-section.md](contracts/documentation-section.md):
   - Read only from rule files already read at `base_sha`, never from the
@@ -299,7 +300,7 @@ code spans, with no notification.
   - A section in a rule file that Step 4 skipped (over 24,000 bytes, over
     the 80,000-byte total, a symlink) is not seen: fall back to the
     conventional locations and the generic reminder.
-- [ ] T019 [US4] In `PROMPT.md` Step 5c Documentation section (T016) and
+- [X] T019 [US4] In `PROMPT.md` Step 5c Documentation section (T016) and
   the Details reminder (T017), add the `Declared:` line: sites and owners
   as written, each in a code span, "so GitHub sends no notification,
   even when written as `@team`"; generic text when nothing is declared
@@ -311,7 +312,7 @@ code spans, with no notification.
 
 ## Phase 7: Polish, docs and rollout
 
-- [ ] T020 [P] Update `README.md`: a Purpose bullet for the
+- [X] T020 [P] Update `README.md`: a Purpose bullet for the
   documentation check; a new section "Documentation check" after "Author
   organization gate" covering what is checked, the `[docs]` tag,
   carry-forward, no opt-out, dismissal as the override, the reminder,
@@ -321,17 +322,17 @@ code spans, with no notification.
   test checklist items 26 onward from the
   [quickstart.md](quickstart.md) section 4 table. The credential policy
   does not change.
-- [ ] T021 [P] Update `CLAUDE.md`: add `:docs-reminder` to the read-back
+- [X] T021 [P] Update `CLAUDE.md`: add `:docs-reminder` to the read-back
   marker list and the `[docs]` title tag beside it; add a note under
   "Editing PROMPT.md" that the "Documentation" section format is a
   contract repositories rely on, so changing it needs a README update.
-- [ ] T022 Bump "Agent version" in `PROMPT.md` (line 140) to `0.1.23`.
-- [ ] T023 Self-check `PROMPT.md`: `grep -o '{{[^}]*}}' PROMPT.md | sort
+- [X] T022 Bump "Agent version" in `PROMPT.md` (line 140) to `0.1.23`.
+- [X] T023 Self-check `PROMPT.md`: `grep -o '{{[^}]*}}' PROMPT.md | sort
   -u` shows only `{{env.REVIEWER_LOGIN}}` and
   `{{env.REVIEW_AGENT_HELP_URL}}`; `git diff main -- PROMPT.md` changes
   no existing marker string, the pending label or a `Rule` value; no em
   dashes; prose follows unslop.
-- [ ] T024 Run `markdownlint` from the repository root on `PROMPT.md`,
+- [X] T024 Run `markdownlint` from the repository root on `PROMPT.md`,
   `README.md`, `CLAUDE.md` and `specs/003-docs-alignment-check/`.
 - [ ] T025 Push with `git push --no-verify github
   feature/docs-alignment-check` and open the PR with `env -u GH_TOKEN -u

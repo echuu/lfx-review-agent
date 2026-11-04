@@ -27,8 +27,8 @@ Fix: <the doc change; a one-line pointer is enough>
 ```text
 [minor][docs] 2 more documentation gaps
 
-- `RETRY_BACKOFF` (src/config.ts:41) is not in the environment table in `README.md`
-- `--verbose` (cmd/root.go:88) is not in `docs/cli.md`
+- `RETRY_BACKOFF` (`src/config.ts:41`) is not in the environment table in `README.md`
+- `--verbose` (`cmd/root.go:88`) is not in `docs/cli.md`
 ```
 
 One line per folded gap. Each line counts as one `[minor]`, and a

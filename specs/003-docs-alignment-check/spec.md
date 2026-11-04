@@ -521,11 +521,12 @@ without the section and confirm a generic reminder.
   from the new commits, unless the review fell back to the whole PR diff.
   A gap that matches an earlier documentation finding (same named item
   and same doc location) MUST be classified as that earlier finding and
-  MUST NOT be raised again, so one gap never counts twice. The match
-  applies only when the commits in this review's scope do not change that
-  named item again. A later commit that changes it again raises a new
-  finding, even when the earlier one was resolved by a dismissal
-  (FR-036).
+  MUST NOT be raised again, so one gap never counts twice. The one
+  exception: when the review's scope is the diff of the new commits and
+  that diff changes the named item again, it is a new finding, even when
+  the earlier one was resolved by a dismissal (FR-036). On a whole-PR
+  fallback the match always applies, since that diff still holds the
+  original change.
 - **FR-041**: Earlier documentation findings MUST be classified as
   resolved, partially addressed or still open, like every other finding.
 - **FR-042**: An earlier documentation finding (missing or misaligned)
