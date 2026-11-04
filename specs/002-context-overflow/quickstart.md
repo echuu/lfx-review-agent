@@ -57,9 +57,10 @@ Create the ALLOW policy first. Run with `--account linux-foundation`.
    the new version: `guild integration version create`, `operation create
    --openapi`, then wait until `guild integration operation list` (the
    newest draft) shows all 21 operations, and only then `version build`
-   and `version publish`. A published version can't be removed. Keep the
-   spec under about 14 KB: Guild's generator dropped the last three
-   operations of the 16.8 KB 1.0.6 spec. 1.0.7 is the version to pin.
+   and `version publish`. A published version can't be removed.
+   Generation stops at the first operation it can't handle: the
+   path-pinned remove in 1.0.6 took the two operations after it too.
+   1.0.7 is the version to pin.
 3. Create the ALLOW policy for `git_get_tree`.
 4. Step 2 above.
 5. Merge, then `guild agent save --publish --version-number 0.1.21 -m

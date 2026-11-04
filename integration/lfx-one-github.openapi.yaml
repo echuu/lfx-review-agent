@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 # Operations the LFX review agent performs as `lfx-one`; tools are
-# `lfx_one_github_<operation id>`. Keep this file under about 14 KB: Guild's
-# generator dropped the last operations of a 16.8 KB spec (1.0.6). Never
-# pin 1.0.6. Guild does not enforce request enums; fix values in the path.
+# `lfx_one_github_<operation id>`. Never pin 1.0.6: Guild's generator
+# stopped at its path-pinned issues_remove_label and dropped every later
+# operation. Guild does not enforce request enums.
 
 openapi: 3.0.3
 info:
@@ -361,7 +361,7 @@ paths:
                   items: { type: string, enum: ["lfx-review-agent-pending"] }
       responses:
         "200": { $ref: "#/components/responses/OkList" }
-  /repos/{owner}/{repo}/issues/{issue_number}/labels/lfx-review-agent-pending:
+  /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}:
     delete:
       operationId: issues_remove_label
       summary: Remove the pending label from an issue or pull request
@@ -370,6 +370,10 @@ paths:
         - $ref: "#/components/parameters/owner"
         - $ref: "#/components/parameters/repo"
         - $ref: "#/components/parameters/issue_number"
+        - name: name
+          in: path
+          required: true
+          schema: { type: string, enum: ["lfx-review-agent-pending"] }
       responses:
         "200": { $ref: "#/components/responses/OkList" }
         "404": { $ref: "#/components/responses/Ok" }

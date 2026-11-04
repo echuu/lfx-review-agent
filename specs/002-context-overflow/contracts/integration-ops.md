@@ -18,7 +18,6 @@ repository is megabytes. One directory per call.
 | Operation id | 1.0.5 | 1.0.6 |
 | --- | --- | --- |
 | `repos_get_content` | No header parameter | Optional `Accept` header (below) |
-| `issues_remove_label` | `DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}`, `name` pinned by an `enum` that Guild is not known to enforce (body enums are not, research R5) | `DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/lfx-review-agent-pending`, no `name` parameter |
 
 `repos_get_content` gains an optional header parameter `Accept`,
 documented with `enum: ["application/vnd.github.raw+json"]`. Guild does
@@ -26,10 +25,9 @@ not enforce the enum (research R5); any `Accept` value on this GET is
 still a read. OpenAPI allows one GET per path, so this cannot be a
 separate operation.
 
-Both operations keep their ids and tool names, so the ALLOW policies
-that name them should still apply; quickstart step 2 checks that. The
-prompt stops passing `name` to `issues_remove_label`. The live agent
-(0.1.19) pins 1.0.5, so publishing 1.0.6 does not change it.
+`issues_remove_label` keeps its 1.0.5 form (`/labels/{name}` with an
+unenforced enum). 1.0.6 moved the label into the path, and that broke
+Guild's operation generation (research R11, R12).
 
 OpenAPI 3.0.3 ignores a header parameter named `Accept`, so the
 `repos_get_content` 200 response also lists the
@@ -46,7 +44,7 @@ waits for a read-only token (#19).
 
 1.0.6 gave `pulls_list_reviews` and `pulls_list_review_comments` output
 schemas listing only the fields the prompt reads. 1.0.7 drops them to stay
-under Guild's generator size limit (research R11). Both operations return
+small (research R11). Both operations return
 `OkList` again.
 
 ## Constraints
