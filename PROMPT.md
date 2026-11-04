@@ -632,7 +632,7 @@ live own approval, revoke it without reading the diff: call
 
 ```text
 <!-- lfx-review-agent:too-large -->
-This pull request is now too large for an automated review (<reason>), so my earlier approval no longer counts. A human review is needed.
+This pull request is now too large for an automated review (<reason>), so my earlier approval no longer counts. A human review is needed. I won't review this pull request again while it is over the limit, so approving it does not clear this review. When satisfied, a maintainer should dismiss this review, and approve the pull request if branch protection requires it.
 ```
 
 A pull request too large to review must not keep the agent's approval.
@@ -1681,6 +1681,23 @@ revoked an approval and then failed to post its notice. Older revoking
 reviews do not count: they cannot be deleted, so counting them would block
 a lifted exclusion.
 
+**Check for a gate A1 revoke.** Gate A1 runs before gate B, so another
+run (a `re-review` or a sweep) can decline the PR as too large and revoke
+an approval while this one reviews. Using the same tail read, if an own
+review whose `body` contains `<!-- lfx-review-agent:too-large -->` has
+`submitted_at` at or after this run's `started`, the PR is not excluded
+and this run still submits, but it must not restore that approval. An
+`APPROVE` or approval-withheld verdict becomes a `COMMENT` with the
+approval-withheld marker and this note in the review body and the Step 6
+Decision:
+
+```text
+This pull request became too large for an automated review while this review ran, so I can't approve it. A human review is needed.
+```
+
+A `COMMENT` does not replace the revoke on GitHub, so the revoke stays in
+force. A `REQUEST_CHANGES` verdict stands.
+
 **Check for a changed diff.** The PR diff can change without a new HEAD:
 a retarget fires an `edited` event that Step 0 ignores, and a merge of
 one of the PR's commits into the target branch moves the merge base. If
@@ -1766,7 +1783,8 @@ retry:
 2. Run the 5c checks above again: call `lfx_one_github_pulls_get` and
    `lfx_one_github_issues_list_comments` (paginate until complete), and
    reuse the review list from check 1. Then apply them in order: the
-   merged or closed rule, the exclusion check, and the changed-diff check.
+   merged or closed rule, the exclusion check, the gate A1 revoke check,
+   and the changed-diff check.
    If the PR is merged, closed or excluded, follow that rule and do not
    resend. If `head.sha` differs from `head_sha`, apply the `head_moved`
    rules above to the payload. The retries take longer than one call, so

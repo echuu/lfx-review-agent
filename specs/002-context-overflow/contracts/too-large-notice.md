@@ -22,6 +22,8 @@ When over:
    comments, whose body starts with `<!-- lfx-review-agent:too-large -->`.
    The approval guard counts that marker; Step 2 does not, so cycle state
    is unchanged.
+   Step 5c of a review already running checks for this revoke and never
+   turns it back into an approval.
 2. If a `too-large-notice` is newer than the PR's most recent session
    comment (any `session-start`, `session-summary` or `abandoned`), stop
    silently. A `re-review` gets a skip notice.
