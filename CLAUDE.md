@@ -17,6 +17,7 @@ the agent is a prompt plus a Guild manifest.
 | `README.md` | Setup: onboarding steps, workspace variables, triggers, credential policy, test checklist. |
 | `scripts/onboard-repo.sh` | Creates a repository's webhook triggers (onboarding step 4). |
 | `scripts/sweep-trigger.sh` | Sets the hourly sweep trigger's repository list from the webhook triggers. |
+| `scripts/re-review-trigger.sh` | Adds the `@lfx-one re-review` comment filter to existing re-review triggers and activates them. |
 | `.markdownlint.json` | Lint config (80 columns; tables and code blocks exempt). |
 
 `guild.json`, `.guild/cache/` and `.npmrc` are local Guild files, excluded

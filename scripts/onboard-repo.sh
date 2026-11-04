@@ -18,17 +18,19 @@ set -euo pipefail
 # "<event> <action> <name suffix>". When the agent handles a new event,
 # add it here and in README.md, then rerun this script for every onboarded
 # repository.
-#
-# The "issue_comment created re-review comment" trigger is left out: it
-# started a model run for every comment, and is deactivated to save cost
-# (README.md, Triggers).
 TRIGGERS=(
   "pull_request opened opened"
   "pull_request synchronize synchronize"
   "pull_request ready_for_review ready_for_review"
+  "issue_comment created re-review comment"
 )
 
 AGENT=linux-foundation~lfx-review-agent
+# The issue_comment trigger gets this Guild comment filter, so only a
+# comment that starts with `@lfx-one re-review` starts a session. Without
+# it, every comment starts a model run. Keep in sync with
+# scripts/re-review-trigger.sh, which adds it to existing triggers.
+RE_REVIEW_FILTER='^\s*@lfx-one\s+re-review\b'
 
 : "${WS:?set WS to the Guild workspace ID}"
 if [ $# -eq 0 ]; then
@@ -76,7 +78,12 @@ for repo in "${repos[@]}"; do
       echo "skip    $name (exists)"
       continue
     fi
-    guild trigger create \
+    config=$(jq -c -n --arg r "$repo" '{repo: $r}')
+    if [ "$event" = issue_comment ]; then
+      config=$(jq -c --arg rt "$RE_REVIEW_FILTER" \
+        '. + {required_text: $rt, required_text_regex: true}' <<<"$config")
+    fi
+    id=$(guild --mode json trigger create \
       --workspace "$WS" \
       --type webhook \
       --integration github \
@@ -84,7 +91,21 @@ for repo in "${repos[@]}"; do
       --action "$action" \
       --agent "$AGENT" \
       --name "$name" \
-      --service-config "{\"repo\": \"$repo\"}" >/dev/null
+      --service-config "$config" | jq -r '.id // empty')
     echo "created $name"
+    if [ -z "$id" ]; then
+      echo "no trigger ID returned for $name; check it with guild trigger list" >&2
+      exit 1
+    fi
+    # A new trigger starts active. An unfiltered comment trigger would
+    # start a run per comment, so turn it off if the filter did not save.
+    if [ "$event" = issue_comment ] && ! guild --mode json trigger get "$id" |
+        jq -e --arg rt "$RE_REVIEW_FILTER" \
+          '.service_config.required_text == $rt
+           and .service_config.required_text_regex == true' >/dev/null; then
+      guild trigger deactivate "$id" >/dev/null
+      echo "filter not saved on $name ($id); deactivated it" >&2
+      exit 1
+    fi
   done
 done
