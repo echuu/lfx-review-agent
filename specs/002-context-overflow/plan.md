@@ -28,6 +28,9 @@ budget and says plainly what it could not read:
   the probe showed Guild does not enforce body enums (R5).
 - **Size check** (R8). A last-resort gate that declines a PR whose diff
   cannot fit, with one notice instead of a start comment.
+- **Label remove pinned in the path** (R12). `issues_remove_label` can
+  remove only `lfx-review-agent-pending`, because Guild does not enforce
+  the `enum` that was meant to pin it.
 
 ## Technical Context
 
@@ -75,7 +78,7 @@ repository's `CLAUDE.md` rules serve as the gates.
 | The integration is published before `guild.yaml` pins it, and the policy exists before the save. | Planned (rollout) |
 | The maintainer runs every Guild command that uses the credential. | Planned (quickstart steps 1, 2, 5) |
 | PR content is untrusted. File paths decide exclusions for unread files only by fixed rules (R10). | Planned |
-| No new operation can mutate GitHub state. Both new operations are GET. | Pass |
+| No new operation can mutate GitHub state. Both new operations are GET. The label remove can no longer touch other labels. | Pass |
 | Prose follows unslop. License headers unchanged (no new script). | Planned |
 
 Re-checked after design: no violations, so no Complexity Tracking
@@ -94,6 +97,9 @@ See [contracts/integration-ops.md](contracts/integration-ops.md).
   shows Guild sends the header.
 - Narrowed output schemas on `pulls_list_reviews` and
   `pulls_list_review_comments`.
+- `issues_remove_label`: path
+  `/repos/{owner}/{repo}/issues/{issue_number}/labels/lfx-review-agent-pending`,
+  no `name` parameter. The Tools table row drops `name`.
 
 ### Read budget (new section in `PROMPT.md`, near "Tools")
 
@@ -136,7 +142,7 @@ listed file is named but never withholds approval.
 ### Repository files
 
 - `integration/lfx-one-github.openapi.yaml`: new operations, narrowed
-  history schemas, version 1.0.6.
+  history schemas, path-pinned label remove, version 1.0.6.
 - `guild.yaml`: pin 1.0.6, add the tools.
 - `README.md`: credential policy, test checklist items.
 - `CLAUDE.md`: `:too-large` joins the read-back markers; the
@@ -196,8 +202,8 @@ feature touches the existing files above and adds no script.
   2026-11-03).
 - **GraphQL**: out until a read-only token exists (#19); the enum probe
   failed (R5).
-- **Unenforced label pins** (R12): not part of this feature. The
-  maintainer decides before publishing 0.1.18.
+- **Unenforced label pins** (R12): the remove is pinned in the path in
+  1.0.6 (decided 2026-11-03). The add and the reaction stay as they are.
 - **Plain text**: depends on Guild sending the header (R4).
 - **Output-schema trimming**: a question for Guild (R6); 1.0.6 shows the
   answer either way.

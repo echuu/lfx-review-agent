@@ -265,7 +265,8 @@ looks at it either way.
 
 The R5 probe shows that an `enum` in an operation's request body is
 documentation only: Guild sends any value. The integration relies on
-such pins in three places:
+such pins in three places. The remove pins a path parameter, which the
+probe did not test; nothing suggests Guild treats it differently.
 
 | Operation | Pin | What the agent could do instead |
 | --- | --- | --- |
@@ -279,8 +280,8 @@ gets past that could add or remove labels as `lfx-one`. The exposure
 starts when an agent version that lists the label tools is published
 (0.1.18); 0.1.17 does not list them in `guild.yaml`.
 
-Options, outside this feature's scope, for the maintainer to decide
-before publishing 0.1.18:
+Options considered (0.1.18 was already published when this was found,
+2026-11-03 23:37 UTC):
 
 - Pin the remove in the path itself:
   `DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/lfx-review-agent-pending`
@@ -290,3 +291,9 @@ before publishing 0.1.18:
   parameter values, or whether Guild can enforce request schemas.
 - Accept the add risk for now, since outside contributors' PRs are the
   main injection source and the agent never approves them.
+
+**Decision** (maintainer, 2026-11-03): pin the remove in the path, in
+integration 1.0.6. `issues_remove_label` keeps its operation id and tool
+name; its path becomes the literal label, and the `name` parameter goes.
+The add and the reaction stay as they are: GitHub offers no path that
+names one label to add, and no Guild-side restriction was requested.

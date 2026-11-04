@@ -38,6 +38,10 @@ Create the ALLOW policy first. Run with `--account linux-foundation`.
   commit: expect plain Markdown (about 22 KB), not JSON with base64. If it
   returns JSON, Guild dropped the header: switch the prompt back to
   `repos_get_content` before merging (plan, Rollout step 3).
+- `issues_remove_label` on a test PR in `linuxfoundation/lfx-review-agent`
+  that carries the pending label and one other label: expect 200 and only
+  the pending label gone, then 404 on a second call. Confirm the
+  existing ALLOW policy still allows it (no policy denial).
 - `pulls_list_reviews` on #4962: record whether the response shrank to the
   narrowed schema (research R6). Send the result to Guild with the
   question either way.

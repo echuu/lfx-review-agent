@@ -14,6 +14,17 @@ paths and parameters.
 `git_get_tree` never takes `recursive`: a recursive tree of a large
 repository is megabytes. One directory per call.
 
+## Changed operation
+
+| Operation id | 1.0.5 | 1.0.6 |
+| --- | --- | --- |
+| `issues_remove_label` | `DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}`, `name` pinned by an `enum` that Guild is not known to enforce (body enums are not, research R5) | `DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/lfx-review-agent-pending`, no `name` parameter |
+
+The operation id and tool name stay, so the ALLOW policy that names it
+should still apply; quickstart step 2 checks that. The prompt stops
+passing `name`. Agent 0.1.18 pins 1.0.5, so publishing 1.0.6 does not
+change it.
+
 ## No GraphQL operation
 
 Guild does not enforce body `enum` values (research R5), so a
