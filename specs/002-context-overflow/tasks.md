@@ -180,12 +180,12 @@ start comment (spec FR-001 to FR-005).
 **Independent Test**: quickstart section 4 rows for a PR over 20,000
 changed lines and one that drops back under.
 
-- [ ] T019 [US1] In `PROMPT.md` "Comment classes", add class
+- [x] T019 [US1] In `PROMPT.md` "Comment classes", add class
   `too-large-notice` (marker `<!-- lfx-review-agent:too-large -->`)
   after `stalled-notice` and before `abandoned`; renumber the later
   classes and fix the gate C reference to the summary class number.
   Add it to the list of notices that do not count as attempts.
-- [ ] T020 [US1] In `PROMPT.md` "Apply gates", add gate A1 after gate A
+- [x] T020 [US1] In `PROMPT.md` "Apply gates", add gate A1 after gate A
   from [contracts/too-large-notice.md](contracts/too-large-notice.md):
   limits `max_changed_lines` 20,000 (`additions + deletions`),
   `max_changed_files` 300, `max_review_comments` 150, missing fields
@@ -193,17 +193,17 @@ changed lines and one that drops back under.
   `too-large-notice` is newer than the most recent `session-start`,
   `session-summary` or `abandoned` comment. Add the limits to the "Read
   budget" table. Add gate A1 to the approval guard's gate list.
-- [ ] T021 [US1] In `PROMPT.md`, gate C: a `too-large-notice` does not
+- [x] T021 [US1] In `PROMPT.md`, gate C: a `too-large-notice` does not
   debounce (go to gate D). "Duplicate notice check": add type
   `too-large` (every earlier `too-large-notice` newer than the most
   recent session comment is a duplicate) and the superseded marker
   `<!-- lfx-review-agent:superseded notice=too-large -->`. "Skip notice":
   add a gate A1 row.
-- [ ] T022 [US1] In `PROMPT.md` "Pending label" and Step 0.3: a sweep
+- [x] T022 [US1] In `PROMPT.md` "Pending label" and Step 0.3: a sweep
   removes the label at gate A1; Step 0.3 item 4 allows the too-large
   notice beside the stalled notice; the "A sweep follows every later
   step" paragraph says a sweep may post these two notices.
-- [ ] T023 [US1] In `PROMPT.md` Step 7, add `Review not started: PR too
+- [x] T023 [US1] In `PROMPT.md` Step 7, add `Review not started: PR too
   large (<reason>)` with a link to the notice.
 
 **Checkpoint**: Story 1 complete.

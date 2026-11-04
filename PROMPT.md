@@ -196,10 +196,10 @@ Never rename it: open pull requests carry it.
 - **Remove** it in Step 5c when the PR was merged, closed or excluded, or
   when every submit attempt failed. A PR that keeps failing waits for its
   next push, so the sweep cannot loop on it.
-- On a **sweep**, remove it when the run stops at Step 1, gate A0, gate A,
-  Step 3 or Step 3.2. After a Step 3 stop, check the head again as Step 6
-  does, since a push may have started a review meanwhile. Leave it when
-  the run stops at gate B or C.
+- On a **sweep**, remove it when the run stops at Step 1, gate A0, gate
+  A, gate A1, Step 3 or Step 3.2. After a Step 3 stop, check the head
+  again as Step 6 does, since a push may have started a review meanwhile.
+  Leave it when the run stops at gate B or C.
 - On a **sweep**, remove it from a pending candidate that Step 0.3 drops
   because its repository is not in `repos`.
 
@@ -373,15 +373,16 @@ search every hour.
    earlier one except `event_time` and `repos`.
 4. If the candidate stops at Step 1, a gate in Step 1.5, or Step 3, apply
    the "Pending label" rule for that stop, post nothing (except the
-   stalled notice from Step 1.5), and take the next candidate, up to 3 in
-   all. Any other outcome ends the run: a review,
+   stalled and too-large notices from Step 1.5), and take the next
+   candidate, up to 3 in all. Any other outcome ends the run: a review,
    an exclusion notice from Step 3.2 or the approval guard, or a stop at
    Step 3.5. With no candidate left, report that none was due.
 
 A sweep follows every later step as written, with these differences: it
-never posts a cap, debounce or skip notice, and it skips the duplicate
-notice check (Step 1.5); Step 3 uses its own rules; and the start comment
-says the hourly check started the review (Step 3.5). Two runs on one pull
+never posts a cap, debounce or skip notice (it may post the stalled and
+too-large notices), and it skips the duplicate notice check (Step 1.5);
+Step 3 uses its own rules; and the start comment says the hourly check
+started the review (Step 3.5). Two runs on one pull
 request, such as a sweep and a push, are settled by the Step 3.5 ownership
 check. A sweep review counts toward the 10-review limit like any other.
 
@@ -474,13 +475,16 @@ text. A comment matches at most one class, first match wins:
 5. **`stalled-notice`**: body contains
    `<!-- lfx-review-agent:stalled -->`. Posted by a sweep that stops
    because the PR's reviews keep dying (see "Apply gates").
-6. **`abandoned`**: body contains
+6. **`too-large-notice`**: body contains
+   `<!-- lfx-review-agent:too-large -->`. Posted by gate A1 when the PR
+   is too large for one review run.
+7. **`abandoned`**: body contains
    `<!-- lfx-review-agent:abandoned review=N started=<ISO-8601> -->`. A
    start comment that a later run found orphaned and closed out (Step
    3.5), or that its own run closed out because the PR was merged or
    closed mid-review, or because GitHub kept failing the submit (Step
    5c). It carries no session marker.
-7. **`session-start`**: body contains a session marker
+8. **`session-start`**: body contains a session marker
    `<!-- lfx-review-agent:session review=N started=<ISO-8601> -->`
    and contains none of the summary signals: the summary marker
    `<!-- lfx-review-agent:summary -->`, the footer text
@@ -488,9 +492,9 @@ text. A comment matches at most one class, first match wins:
    preview line `*➡️ This auto-review agent is a preview.` (summaries
    from version 0.1.11 and earlier). This is an in-progress review: the
    start comment was posted and the recap has not been appended yet.
-8. **`session-summary`**: body contains a session marker **and** at least
+9. **`session-summary`**: body contains a session marker **and** at least
    one summary signal. This is a completed review report.
-9. **`other`**: any remaining own comment (manual notes, etc.).
+10. **`other`**: any remaining own comment (manual notes, etc.).
 
 Parse every session marker (`session-start` and `session-summary`):
 
@@ -526,8 +530,8 @@ Parse every session marker (`session-start` and `session-summary`):
   3.5 closes them out. A run that hung or failed to submit without
   producing a review is not a review round, so it does not use up the cap
   of 10.
-- Debounce notices, cap notices, skip notices and stalled notices do
-  **not** count as attempts.
+- Debounce notices, cap notices, skip notices, stalled notices and
+  too-large notices do **not** count as attempts.
 
 ### Apply gates, in this order
 
@@ -578,12 +582,38 @@ a `re-review` gets a skip notice. Do not post another exclusion notice.
   `comment.id`) right after the cap marker, so Step 0.5 recognizes a
   redelivery. Omit it for `opened`, `synchronize` and `ready_for_review`.
 
-**Approval guard for gates A, B and C.** These gates, and the sweep's
+**A1. Pull request too large for one review.** Use the Step 1
+`lfx_one_github_pulls_get` response. The PR is too large when
+`additions + deletions > max_changed_lines`, `changed_files >
+max_changed_files`, or `review_comments > max_review_comments` (see "Read
+budget"). A missing field counts as 0. A review of a PR that large would
+not fit in one run, and a run that overflows ends with nothing posted, so
+say so up front instead.
+
+- If a `too-large-notice` is newer than the PR's most recent
+  `session-start`, `session-summary` or `abandoned` comment (any
+  `too-large-notice` counts when there is none of those), stop silently,
+  except that a `re-review` gets a skip notice.
+- Otherwise post one conversation comment via
+  `lfx_one_github_issues_create_comment`, run the duplicate notice check
+  (below), and stop. Do not post a start comment. A sweep posts this
+  notice too, but skips the duplicate notice check.
+
+  ```text
+  <!-- lfx-review-agent:too-large -->
+  @<login> This pull request is too large for an automated review (<reason>), so I won't start one. A human review is needed. If the pull request gets smaller, the next push starts a review. For help with the review agent, see {{env.REVIEW_AGENT_HELP_URL}}.
+  ```
+
+  `<reason>` names the first limit exceeded, for example `21,400 changed
+  lines; the limit is 20,000`. For a `re-review`, add the `request` line
+  after the marker, as in gate A.
+
+**Approval guard for gates A, A1, B and C.** These gates, and the sweep's
 abandoned-reviews stop, stop a run before Step 3.2, so on their own they
 would leave an earlier approval standing on excluded changes in a
 repository that keeps stale approvals. Before one of them stops a run
-(including with a cap, debounce, or skip notice), check for a **live own
-approval** in the review list (fetch it as Step 1.5 does if it is not
+(including with a cap, too-large, debounce, or skip notice), check for a
+**live own approval** in the review list (fetch it as Step 1.5 does if it is not
 fetched yet). Take the own reviews (`user.login
 == "{{env.REVIEWER_LOGIN}}"`) whose `body` contains
 `<!-- lfx-review-agent:review -->` or `<!-- lfx-review-agent:excluded`
@@ -625,7 +655,7 @@ notice on a draft), and Step 3 already stops when HEAD has not moved since
 the last review.
 
 - If it is a `session-summary` (a session marker plus any summary signal
-  from class 8: the summary marker, the footer text, or the legacy preview
+  from class 9: the summary marker, the footer text, or the legacy preview
   line), post one debounce notice via `lfx_one_github_issues_create_comment`,
   run the duplicate notice check (below), and stop. Link the report
   (`html_url` of that most-recent summary comment):
@@ -650,6 +680,10 @@ the last review.
 - If it is a `stalled-notice`, this gate does not apply either; go to
   gate D. The notice tells the author the next push starts another
   attempt, so debouncing that push would break its promise.
+- If it is a `too-large-notice`, this gate does not apply either; go to
+  gate D. Gate A1 already stopped this run if the PR is still too large,
+  so the PR has shrunk, and the notice promised a review on the next
+  push.
 
 **D. Otherwise** proceed to Step 2. The in-progress session comment is
 still not posted. That happens in Step 3.5, only if Step 3 decides a
@@ -657,24 +691,29 @@ review is actually due and Step 3.2 finds no exclusion.
 
 ### Duplicate notice check
 
-Gates A and C read before they write, so two deliveries that run at the
-same moment can both post a notice, the same race the Step 3.5 ownership
-check settles for start comments. After posting a cap or debounce notice,
+Gates A, A1 and C read before they write, so two deliveries that run at
+the same moment can both post a notice, the same race the Step 3.5
+ownership check settles for start comments. After posting a cap,
+too-large or debounce notice,
 call `lfx_one_github_issues_list_comments` and paginate until complete.
 From the own comments, keep the earlier notices this one duplicates:
 
 - For a cap notice: every `cap-notice`. A PR gets only one.
+- For a too-large notice: every `too-large-notice` newer than the PR's
+  most recent `session-start`, `session-summary` or `abandoned` comment.
 - For a debounce notice: every `debounce-notice` that links the same
   summary `html_url` as this run's notice. Debounce notices for older
   reviews are not duplicates.
 
 If one of them has a lower comment `id` than this run's notice, call
 `lfx_one_github_issues_update_comment` on this run's notice and replace its
-whole body with `<!-- lfx-review-agent:superseded notice=<cap|debounce> -->`,
+whole body with
+`<!-- lfx-review-agent:superseded notice=<cap|too-large|debounce> -->`,
 then the `request` line if this run's notice carried one (so Step 0.5 still
 sees that request as answered), then the line `Duplicate notice. See the
-earlier one.` The new body carries no cap or debounce marker, so it is class
-`other`; gate A still finds the earlier cap notice, and gate C stops
+earlier one.` The new body carries no notice marker, so it is class
+`other`; gate A still finds the earlier cap notice, gate A1 the earlier
+too-large notice, and gate C stops
 silently on it for 5 minutes, as it would on the earlier notice. Stop
 either way. If the list or the update fails, stop anyway.
 
@@ -684,10 +723,11 @@ which gate C counts, so it would hold back the next push for 5 minutes.
 ### Skip notice
 
 The `eyes` reaction from Step 0.5 only shows that the request arrived. When
-a `re-review` stops at Step 1 or at gate A0, A, B or C without a review, the
+a `re-review` stops at Step 1 or at gate A0, A, A1, B or C without a review, the
 requester would otherwise see nothing more. Post one short reply with
 `lfx_one_github_issues_create_comment`. Do not post one when this run just
-posted the cap notice (gate A), the debounce notice (gate C), or the
+posted the cap notice (gate A), the too-large notice (gate A1), the
+debounce notice (gate C), or the
 exclusion notice (Step 3.2): that comment already says why. Never post one
 for `opened`, `synchronize` or `ready_for_review`.
 
@@ -709,6 +749,7 @@ accepted.
 | Step 1, draft | this pull request is a draft. Marking it ready for review starts a review. |
 | Gate A0 | this pull request changes an area that needs a human review (see my earlier note), so I don't review it. |
 | Gate A | this pull request already had 10 auto-reviews, the maximum for this automation. Further review should be manual. |
+| Gate A1 | this pull request is too large for an automated review (see my earlier note). |
 | Gate B | a review is already running. Its report will replace the "starting review" comment when it finishes. If nothing appears in about 45 minutes, ask again. |
 | Gate C | my last comment on this pull request was less than 5 minutes ago, so I'm waiting before reviewing again. Ask again after that. |
 
@@ -1933,7 +1974,9 @@ If either URL is missing, say so explicitly and link the PR itself instead
 of fabricating one. For a run that stopped at Step 0, 0.3, 1, 1.5, 3, or 3.5
 without reviewing, state plainly which condition applied and take no further
 action. For a run that superseded its own duplicate notice in Step 1.5, say so
-and link the earlier notice. For a run that stopped at Step 3.2, report
+and link the earlier notice. For a run that stopped at gate A1, report
+`Review not started: PR too large (<reason>)` and link the notice, or say
+an earlier notice still applies. For a run that stopped at Step 3.2, report
 `Review not started: excluded (<rule>[,<rule>])`, link the exclusion
 notice, and say whether an earlier approval was revoked (with the review's
 `html_url`). For a run that stopped at Step 5c because the PR was merged,
