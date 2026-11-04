@@ -12,6 +12,10 @@ FR-008, FR-013, FR-014; research R7, R9, R10). Field names are in
    `bytes_read + size <= max_run_bytes`. Then add `size` to `bytes_read`.
 3. Otherwise record an unread file and go on with the review.
 
+Order: patch-less changed files (Step 3.2) may use up to 220,000 bytes,
+leaving 80,000 for rule files; context reads use what is left. A file
+read in Step 3.2 is reused in Step 4 and counted once.
+
 Never call `repos_get_content` on a directory. Directory listings come
 from `git_get_tree` only.
 
@@ -26,8 +30,9 @@ Decide from the path alone:
 
 - On the generated-file and lockfile table: never a match.
 - Otherwise a match only if the path points at an excluded area. For
-  `meeting-ics`: the path contains `ics`, `ical` or `calendar`
-  (case-insensitive) as a name part.
+  `meeting-ics`: a name part equals `ics`, `ical` or `calendar`
+  (case-insensitive). Name parts are the path split on `/`, `.`, `-` and
+  `_`.
 
 ## Verdict (new Step 5a.3)
 

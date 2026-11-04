@@ -101,7 +101,7 @@ See [contracts/integration-ops.md](contracts/integration-ops.md).
   `/repos/{owner}/{repo}/issues/{issue_number}/labels/lfx-review-agent-pending`,
   no `name` parameter. The Tools table row drops `name`.
 
-### Read budget (new section in `PROMPT.md`, near "Tools")
+### Read budget (new section in `PROMPT.md`, after "Pending label")
 
 See [contracts/read-budget.md](contracts/read-budget.md). A table of
 limits the maintainers can tune, the rule that every full-file read

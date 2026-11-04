@@ -93,6 +93,11 @@ Integration 1.0.6 and the shared prompt sections.
   full-file read" rule, the unread-file kinds `changed-no-patch`,
   `changed-with-patch` and `context`, and the reasons `over the
   100,000-byte limit`, `over the 300,000-byte run total`, `size unknown`.
+  Set the order: patch-less changed files (Step 3.2) may use up to
+  220,000 bytes, leaving 80,000 for rule files; context reads use what is
+  left. A file read in Step 3.2 is reused in Step 4 and counted once. A
+  failed tree listing means `size unknown`, which withholds approval for
+  a patch-less changed file.
 - [ ] T011 In `PROMPT.md`, add a section "Generated files and lockfiles"
   after "Review exclusions", with the research R9 table verbatim and the
   rule: a listed file that is not read is named "generated or lockfile,
@@ -133,16 +138,20 @@ read and rule-file discovery.
   Add the research R10 rule for a file left unread: a file on the
   generated-file and lockfile table is never a match; any other is a
   match only if its path points at the excluded area (for
-  `meeting-ics`: the path contains `ics`, `ical` or `calendar`,
-  case-insensitive, as a name part). Keep "when unsure, treat it as a
-  match" for files that were read.
+  `meeting-ics`: a name part equals `ics`, `ical` or `calendar`,
+  case-insensitive, where name parts are the path split on `/`, `.`, `-`
+  and `_`; so `ics.helper.ts` matches and `analytics.ts` does not).
+  Keep "when unsure, treat it as a match" for files that were read.
 - [ ] T015 [US2] In `PROMPT.md`, add "### 5a.3. Unread changed files"
-  after 5a.2: run when the verdict would be `APPROVE`; if any unread file
+  after 5a.2: run when the verdict would be `APPROVE`. If any unread file
   has kind `changed-no-patch` and is not on the generated-file table,
   withhold approval with the approval-withheld marker and the note from
-  [contracts/read-budget.md](contracts/read-budget.md) verbatim. A
-  `REQUEST_CHANGES` verdict stands. A deleted file is never
-  `changed-no-patch`.
+  [contracts/read-budget.md](contracts/read-budget.md) verbatim. Check
+  the whole-PR file list from Step 3.2 on every review, follow-ups
+  included: a file the PR still changes stays unread on later rounds, so
+  the PR keeps a withheld approval until the file leaves the diff or a
+  human approves. A `REQUEST_CHANGES` verdict stands. A deleted file is
+  never `changed-no-patch`.
 - [ ] T016 [US2] In `PROMPT.md`, extend every place that lists the
   approval-withholding gates to include 5a.3: Step 2 terminal reviews
   ("posted by Step 5a.1 or 5a.2"), Step 5c `event` (`COMMENT` only when
@@ -150,8 +159,9 @@ read and rule-file discovery.
   line notes, and the Step 7 "Approval withheld" report line.
 - [ ] T017 [US2] In `PROMPT.md` Step 6, add the "Unread files" recap line
   from [contracts/read-budget.md](contracts/read-budget.md) after the
-  rule-files line, and name withholding files at the top of the summary
-  when 5a.3 withheld approval. Update the recap example.
+  rule-files line (deleted large files are listed as `deleted`), and
+  name withholding files at the top of the summary when 5a.3 withheld
+  approval. Update the recap example.
 - [ ] T018 [US2] In `PROMPT.md` "Error handling", add `git_get_tree` and
   full-file reads to the list of reads that never stop a run: a failed
   listing means the size is unknown, so the file is not read (reason
@@ -214,8 +224,8 @@ step 5 (tool output and tokens on a large follow-up).
   sizes still taken from `git_get_tree`. Say the response is the file's
   text, not JSON.
 - [ ] T025 [US3] In `PROMPT.md` "Tools", note that the history reads
-  may return only the fields listed in the table (output schema), and
-  check that no step reads a field outside the T006 lists.
+  may return only the fields listed in the table (output schema). The
+  field check itself is part of T006.
 
 **Checkpoint**: Story 3 complete, pending quickstart step 2.
 
@@ -249,7 +259,11 @@ step 5 (tool output and tokens on a large follow-up).
   --publish --version-number 0.1.19 -m "..."` from an updated `main`.
 - [ ] T035 Run quickstart step 5 on the first 200 reviews under 0.1.19,
   record the results in research R7, and update the memory file with the
-  live state (agent 0.1.19, integration 1.0.6).
+  live state (agent 0.1.19, integration 1.0.6). Compare one follow-up's
+  prior-feedback and bot reconciliation on the same PR before and after
+  1.0.6 (spec US3 scenario 3). Time one too-large notice against its
+  event (SC-002). If T002 confirms trimming, raise
+  `max_review_comments` per research R8.
 
 ---
 

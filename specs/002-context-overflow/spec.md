@@ -162,9 +162,11 @@ finding and every bot comment.
 
 **Acceptance Scenarios**:
 
-1. **Given** a follow-up review, **When** the agent reads prior reviews
-   and inline comments, **Then** it gets every one of them, including
-   their text, author, file and line, and nothing it does not use.
+1. **Given** a follow-up review and a Guild that trims responses to the
+   operation's output schema (research R6), **When** the agent reads
+   prior reviews and inline comments, **Then** it gets every one of them,
+   including their text, author, file and line, and nothing it does not
+   use.
 2. **Given** a rule file or context file read, **When** the agent reads
    it, **Then** it receives the file as plain text.
 3. **Given** a follow-up review, **When** the agent reconciles prior
@@ -193,7 +195,7 @@ finding and every bot comment.
   check uses only what the PR record already holds and errs toward
   reviewing.
 - The PR is excluded or at the 10-review limit: those gates run first, as
-  today, and the size notice is not posted.
+  today, and the too-large notice is not posted.
 - A re-review request on an over-limit PR (if the comment trigger is
   turned back on): it gets the existing skip reply, naming the size limit.
 - Guild cannot trim responses and no safe alternative exists: Story 3's
@@ -209,7 +211,7 @@ finding and every bot comment.
 - **FR-002**: A run that finds the PR over a limit MUST post one notice
   that says the PR is too large for automated review and a human review
   is needed, and MUST NOT post a start comment or a review.
-- **FR-003**: The size notice MUST be posted at most once while the PR
+- **FR-003**: The too-large notice MUST be posted at most once while the PR
   stays over the limit, and MUST NOT count toward the 10-review limit.
 - **FR-004**: A PR that drops back under the limits MUST be reviewed as
   usual on its next event.
@@ -256,10 +258,12 @@ finding and every bot comment.
 
 - **Size limits**: the thresholds the pre-review check compares against
   (changed files, changed lines, and the amount of review history).
-- **Size notice**: a comment with its own marker that tells the author
+- **Too-large notice**: a comment with its own marker that tells the author
   the PR is too large for automated review. Read back by later runs.
-- **Unread file**: a changed file over the per-file read limit, named in
-  the summary and the reason approval was withheld.
+- **Unread file**: a file the agent did not read in full: a changed file
+  whose patch GitHub omitted (withholds approval unless it is a generated
+  file or lockfile), a changed file with a patch (reviewed from its patch),
+  or a file wanted for context. Each is named in the summary.
 
 ## Success Criteria *(mandatory)*
 
@@ -270,15 +274,15 @@ finding and every bot comment.
   notice that says what to do.
 - **SC-002**: Every PR the agent declines for size gets its notice within
   5 minutes of the event, with no start comment left behind.
-- **SC-003**: None of the 392 reviews posted between 2026-11-02 18:00
-  and 2026-11-04 00:02 UTC would have been declined by the size limits.
+- **SC-003**: The size limits meet FR-005: none of the 392 reviews in
+  that window would have been declined.
 - **SC-004**: A follow-up review on a PR with #4962's history reads at
   most half of the 2.11 MB that review 5 read. This depends on Guild
   trimming responses to an output schema (research R6); GraphQL is ruled
   out (research R5).
-- **SC-005**: No approval is posted on a PR with a changed file the agent
-  did not read, unless that file is on the generated-file and lockfile
-  list.
+- **SC-005**: No approval is posted on a PR with a changed file whose
+  patch GitHub omitted and that the agent did not read, unless that file
+  is on the generated-file and lockfile list.
 
 ## Assumptions
 
