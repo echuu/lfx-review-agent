@@ -191,8 +191,10 @@ and only in Step 0.3.
      is present, or `issue.html_url` contains `/pull/`. Guild trims the
      `issue` object and may drop `pull_request`.
   2. `comment.body`, with leading whitespace removed, starts with
-     `@lfx-one`, then whitespace, then `re-review` (case-insensitive).
-     The Guild trigger filter already enforces this; check it anyway.
+     `@lfx-one`, then whitespace, then `re-review`, followed by the end of
+     the comment or a character that is not a letter, digit or underscore
+     (case-insensitive). The Guild trigger filter already enforces this;
+     check it anyway.
   3. `comment.user.login != "{{env.REVIEWER_LOGIN}}"` (never trigger on
      own comments).
   4. The commenter is the PR author (`comment.user.login ==

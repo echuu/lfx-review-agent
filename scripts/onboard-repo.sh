@@ -94,7 +94,7 @@ for repo in "${repos[@]}"; do
       --service-config "$config" | jq -r '.id // empty')
     echo "created $name"
     if [ -z "$id" ]; then
-      echo "no trigger ID returned for $name; check it with guild trigger list" >&2
+      echo "no trigger ID returned for $name; run scripts/re-review-trigger.sh to check its filter" >&2
       exit 1
     fi
     # A new trigger starts active. An unfiltered comment trigger would

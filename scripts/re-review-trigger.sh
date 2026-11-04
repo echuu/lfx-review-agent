@@ -86,7 +86,10 @@ while IFS=$'\t' read -r -u 3 id repo filtered active live; do
       .service_config.required_text == $rt
       and .service_config.required_text_regex == true
       and .service_config.repo == $r' <<<"$saved" >/dev/null; then
-    echo "filter not saved on $repo ($id); left inactive" >&2
+    if [ "$active" = true ]; then
+      guild trigger deactivate "$id" >/dev/null
+    fi
+    echo "filter not saved on $repo ($id); trigger is deactivated" >&2
     exit 1
   fi
   [ "$active" = true ] || guild trigger activate "$id" >/dev/null
