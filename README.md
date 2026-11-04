@@ -55,10 +55,10 @@ the PR only if it no longer changes an excluded area.
 ## When it runs
 
 It runs from GitHub webhook events delivered by Guild: `pull_request`
-(`opened`, `synchronize`, `ready_for_review`). The prompt also handles
-`issue_comment` (`created`, with `@lfx-one re-review` on a PR), but those
-triggers are deactivated for now to save cost; see the Triggers section
-below.
+(`opened`, `synchronize`, `ready_for_review`) and `issue_comment`
+(`created`, a PR comment that starts with `@lfx-one re-review`). A Guild
+comment filter on the `issue_comment` trigger drops every other comment
+before a session starts; see the Triggers section below.
 
 An hourly Guild time trigger also starts a sweep. It reviews at most one
 PR an hour that is owed a review: a push dropped because a review was
@@ -175,8 +175,8 @@ events for repositories it can see, so before creating triggers:
   repository even when the app is installed. A trigger created with the CLI
   is not checked against that list, and it fires normally.
 
-Each repository needs three webhook triggers, one per active event the
-agent handles. Each is scoped to one repository with `--service-config` and
+Each repository needs four webhook triggers, one per event the agent
+handles. Each is scoped to one repository with `--service-config` and
 leaves `agent_input` empty so the raw payload is forwarded. Trigger names
 must be unique within the workspace.
 
@@ -185,7 +185,7 @@ must be unique within the workspace.
 | `pull_request` | `opened` | `lfx-review-agent <repo> opened` | the initial review |
 | `pull_request` | `synchronize` | `lfx-review-agent <repo> synchronize` | a follow-up review after a push |
 | `pull_request` | `ready_for_review` | `lfx-review-agent <repo> ready_for_review` | the review of a PR that was a draft |
-| `issue_comment` | `created` | `lfx-review-agent <repo> re-review comment` | a review on `@lfx-one re-review` (deactivated, not created by the script) |
+| `issue_comment` | `created` | `lfx-review-agent <repo> re-review comment` | a review on a comment that starts with `@lfx-one re-review` (comment filter below) |
 | time, hourly at :17 | | `lfx-review-agent sweep` (one per workspace) | the sweep (`scripts/sweep-trigger.sh`) |
 
 `scripts/onboard-repo.sh` creates them. It takes one or more repository
@@ -231,17 +231,43 @@ Create triggers only for repositories the `lfx-one` token covers. A trigger
 on any other repository fails its first GitHub read, and the session stops
 with a configuration fault before anything is posted.
 
-The `issue_comment` trigger fires on every comment, including issue
-comments and the agent's own, and each one starts a full model run that
-Step 0 then ends. On 2026-10-28 that was 1,369 runs across the onboarded
-repositories, almost none of them re-review requests. The triggers were
-deactivated on 2026-10-29 and `scripts/onboard-repo.sh` no longer creates
-them. While they are off, the agent's messages point to the next push
-instead of a `re-review` comment. To turn them back on, run
-`guild trigger activate <id>` for each one (list them with
-`guild trigger list`), add the line back to `TRIGGERS`, and restore the
-`re-review` wording in `PROMPT.md`; see "Gatekeeper" under Ideas for a
-cheaper way to bring them back.
+### Re-review comment filter
+
+Without a filter, the `issue_comment` trigger fires on every comment,
+including issue comments and the agent's own, and each one starts a full
+model run that Step 0 then ends. On 2026-10-28 that was 1,369 runs across
+the onboarded repositories, almost none of them re-review requests, so
+the triggers were deactivated on 2026-10-29.
+
+Guild's GitHub triggers now check the comment text before starting a
+session. Two `service_config` keys control it: `required_text`, and
+`required_text_regex`, which makes `required_text` an RE2 pattern
+searched anywhere in the comment body, ignoring case. Every re-review
+trigger uses:
+
+```json
+{"repo": "linuxfoundation/<repo>", "required_text": "^\\s*@lfx-one\\s+re-review\\b", "required_text_regex": true}
+```
+
+The `^` anchor means the comment must start with the phrase, after any
+leading whitespace. A phrase later in the comment, a quote reply
+(`> @lfx-one re-review`), and `re-reviewed` do not start a session. Step 0
+in `PROMPT.md` applies the same starts-with check. In the Guild trigger
+editor, these keys are **Require text in comment** and **Use regex**.
+
+`scripts/onboard-repo.sh` creates the trigger with the filter.
+`scripts/re-review-trigger.sh` adds it to existing triggers that lack it,
+reads the saved filter back, and only then activates the trigger, for
+every repository that still has an active `synchronize` trigger. Without
+`--apply` it only prints what it would do.
+
+```bash
+WS=<workspace-id> scripts/re-review-trigger.sh            # dry run
+WS=<workspace-id> scripts/re-review-trigger.sh --apply
+```
+
+`guild trigger update --service-config` replaces the whole config, so a
+manual update must include `repo` as well as the filter keys.
 
 ## Credential policy
 
@@ -352,8 +378,10 @@ Run these on a throwaway PR before enabling triggers on a real repository.
    debounce notice if you push again within 5 minutes.
 5. Force-push. Confirm the follow-up falls back to a whole-PR review and
    the recap says history was rewritten.
-6. Only with the `issue_comment` trigger active: comment
-   `@lfx-one re-review`. Confirm it runs a review even after an approval.
+6. Comment `@lfx-one re-review`. Confirm it runs a review even after an
+   approval. Then post an ordinary comment, a comment with the phrase
+   after other text, and a quote reply of the phrase, and confirm
+   `guild trigger sessions <id>` shows no new session for any of them.
 7. After an approval, push another commit. Confirm a follow-up review
    scoped to the commits after the approved SHA.
 8. Add an inline comment anchored outside the diff (for example, a finding
@@ -424,18 +452,6 @@ Run these on a throwaway PR before enabling triggers on a real repository.
 
 ## Ideas
 
-- **Gatekeeper (highest priority).** The `issue_comment` trigger fires on
-  every comment on every watched repository, and each one starts a full
-  model run that Step 0 then ends. The triggers are deactivated until this
-  exists. A trigger-level filter on `comment.body`
-  matching `@lfx-one re-review` (case-insensitive) would reject those
-  events before any run starts. It is not built: `guild trigger create`
-  offers only `--event`, `--action` and a repo-scoped `--service-config`,
-  and no body filter is documented. Open question for Guild: does
-  `--service-config` accept a payload filter? If not, the fallback is a
-  cheap pre-check agent that forwards only matching events, if Guild
-  allows one agent to start another. Drafts and closed PRs could use the
-  same gate.
 - **Scheduled sweep.** Stall detection and Slack notification of an
   unresolved cycle need a schedule trigger and are not handled yet.
 
