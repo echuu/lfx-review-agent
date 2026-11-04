@@ -9,21 +9,27 @@ paths and parameters.
 | Operation id | Tool | Request | Used by |
 | --- | --- | --- | --- |
 | `git_get_tree` | `lfx_one_github_git_get_tree` | `GET /repos/{owner}/{repo}/git/trees/{tree_sha}`, where `tree_sha` is `<commit>:<directory>` or a commit SHA for the root | Every directory listing; sizes for the read budget (research R3) |
-| `repos_get_content_raw` | `lfx_one_github_repos_get_content_raw` | `GET /repos/{owner}/{repo}/contents/{path}` with `ref`, and header `Accept` with `enum` `application/vnd.github.raw+json` (documentation only: Guild sends any value, and any value is still a read) | Full-file reads as plain text (R4) |
 
 `git_get_tree` never takes `recursive`: a recursive tree of a large
 repository is megabytes. One directory per call.
 
-## Changed operation
+## Changed operations
 
 | Operation id | 1.0.5 | 1.0.6 |
 | --- | --- | --- |
+| `repos_get_content` | No header parameter | Optional `Accept` header (below) |
 | `issues_remove_label` | `DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}`, `name` pinned by an `enum` that Guild is not known to enforce (body enums are not, research R5) | `DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/lfx-review-agent-pending`, no `name` parameter |
 
-The operation id and tool name stay, so the ALLOW policy that names it
-should still apply; quickstart step 2 checks that. The prompt stops
-passing `name`. Agent 0.1.18 pins 1.0.5, so publishing 1.0.6 does not
-change it.
+`repos_get_content` gains an optional header parameter `Accept`,
+documented with `enum: ["application/vnd.github.raw+json"]`. Guild does
+not enforce the enum (research R5); any `Accept` value on this GET is
+still a read. OpenAPI allows one GET per path, so this cannot be a
+separate operation.
+
+Both operations keep their ids and tool names, so the ALLOW policies
+that name them should still apply; quickstart step 2 checks that. The
+prompt stops passing `name` to `issues_remove_label`. Agent 0.1.18 pins
+1.0.5, so publishing 1.0.6 does not change it.
 
 ## No GraphQL operation
 
@@ -51,13 +57,12 @@ The implementation re-checks these lists against every use in
 ## Constraints
 
 - Every new operation is read only (spec FR-011).
-- `repos_get_content_raw` returns files up to 100 MB, so the prompt calls
-  it only after a tree listing gave a size within the read budget.
-- If quickstart step 2 shows Guild drops the `Accept` header, the
-  operation returns the JSON form. The prompt then keeps
-  `repos_get_content` for file reads, and the operation stays unused.
+- A raw read returns files up to 100 MB, so the prompt reads a file
+  only after a tree listing gave a size within the read budget.
+- If quickstart step 2 shows Guild drops the `Accept` header, the read
+  returns the JSON form, and the prompt stops passing the header.
 
 ## Credential policy
 
-One new ALLOW policy on the `lfx-one` credential for the new operations,
+One new ALLOW policy on the `lfx-one` credential for `git_get_tree`,
 limited to this workspace and agent, like the existing ones.

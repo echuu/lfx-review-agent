@@ -94,12 +94,15 @@ Checked against GitHub directly:
 - GraphQL `Blob.text` returns plain text, truncated at about 512 KB
   (`isTruncated`), with `byteSize` and `isBinary`.
 
-**Decision**: add `repos_get_content_raw` in integration 1.0.6: the same
-path as `repos_get_content`, plus an `Accept` header parameter pinned to
-one enum value. Whether Guild sends header parameters is unknown, so
-quickstart step 2 tests it after publish. If Guild drops the header, the
-operation returns the JSON form and the prompt keeps using
-`repos_get_content`; GraphQL `Blob.text` (R5) is the fallback.
+**Decision**: in integration 1.0.6, give the existing
+`repos_get_content` an optional `Accept` header parameter, documented as
+`application/vnd.github.raw+json`. OpenAPI allows one GET per path, so a
+separate raw operation on the same path is not possible. The enum is not
+enforced (R5), but any `Accept` value on this GET is still a read.
+Whether Guild sends header parameters is unknown, so quickstart step 2
+tests it after publish. If Guild drops the header, the read returns the
+JSON form and the prompt stops passing it. GraphQL `Blob.text` is ruled
+out (R5).
 
 **Alternatives**: GraphQL `Blob.text` first (gated on R5);
 `raw.githubusercontent.com` (another host, and private repositories need
@@ -255,9 +258,10 @@ looks at it either way.
 
 - Agent 0.1.19: all prompt changes (Phase B, plus Phase C prompt use of
   whatever 1.0.6 confirms).
-- Integration 1.0.6: `git_get_tree` and `repos_get_content_raw`;
-  narrowed output schemas on the two history operations. One new ALLOW
-  policy for the two new operations.
+- Integration 1.0.6: `git_get_tree`; an optional `Accept` header on
+  `repos_get_content`; narrowed output schemas on the two history
+  operations; the path-pinned label remove (R12). One new ALLOW policy,
+  for `git_get_tree`.
 - Publish order as before: integration, policy, merge, `guild agent
   save --publish --version-number 0.1.19`.
 

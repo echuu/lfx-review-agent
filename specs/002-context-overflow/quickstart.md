@@ -34,10 +34,11 @@ Create the ALLOW policy first. Run with `--account linux-foundation`.
   `<a lfx-self-serve commit SHA>:packages/shared/src/utils`: expect 200,
   `tree` entries with `size`, and a response near 78 KB. Repeat with the
   commit SHA alone for the root.
-- `repos_get_content_raw` on `AGENTS.md` in `lfx-self-serve` at that
-  commit: expect plain Markdown (about 22 KB), not JSON with base64. If it
-  returns JSON, Guild dropped the header: switch the prompt back to
-  `repos_get_content` before merging (plan, Rollout step 3).
+- `repos_get_content` with `Accept: application/vnd.github.raw+json` on
+  `AGENTS.md` in `lfx-self-serve` at that commit: expect plain Markdown
+  (about 22 KB), not JSON with base64. If it returns JSON, Guild dropped
+  the header: remove the header from the prompt before merging (plan,
+  Rollout step 3).
 - `issues_remove_label` on a test PR in `linuxfoundation/lfx-review-agent`
   that carries the pending label and one other label: expect 200 and only
   the pending label gone, then 404 on a second call. Confirm the
@@ -54,7 +55,7 @@ Create the ALLOW policy first. Run with `--account linux-foundation`.
    --openapi`, `version build`, `version publish`. Check that the
    published version lists every operation (20 plus the new ones). A
    published version can't be removed.
-3. Create the ALLOW policy for the new operations.
+3. Create the ALLOW policy for `git_get_tree`.
 4. Step 2 above.
 5. Merge, then `guild agent save --publish --version-number 0.1.19 -m
    "..."` from an updated `main`.

@@ -12,8 +12,8 @@ FR-008, FR-013, FR-014; research R7, R9, R10). Field names are in
    `bytes_read + size <= max_run_bytes`. Then add `size` to `bytes_read`.
 3. Otherwise record an unread file and go on with the review.
 
-Never call `repos_get_content` (or `repos_get_content_raw`) on a
-directory. Directory listings come from `git_get_tree` only.
+Never call `repos_get_content` on a directory. Directory listings come
+from `git_get_tree` only.
 
 ## Changed files without a patch
 

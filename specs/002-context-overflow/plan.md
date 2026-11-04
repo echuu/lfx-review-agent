@@ -21,8 +21,8 @@ budget and says plainly what it could not read:
   A changed file left unread withholds approval, unless it is a generated
   file or lockfile (R9). The exclusion check decides an unread file from
   its path (R10).
-- **Plain text** (R4). A new `repos_get_content_raw` operation asks GitHub
-  for the raw file, if Guild passes the header.
+- **Plain text** (R4). An optional `Accept` header on
+  `repos_get_content` asks GitHub for the raw file, if Guild passes it.
 - **Trimmed history** (R6). Narrowed output schemas on the two REST
   history operations, if Guild trims responses to them. GraphQL is out:
   the probe showed Guild does not enforce body enums (R5).
@@ -78,7 +78,7 @@ repository's `CLAUDE.md` rules serve as the gates.
 | The integration is published before `guild.yaml` pins it, and the policy exists before the save. | Planned (rollout) |
 | The maintainer runs every Guild command that uses the credential. | Planned (quickstart steps 1, 2, 5) |
 | PR content is untrusted. File paths decide exclusions for unread files only by fixed rules (R10). | Planned |
-| No new operation can mutate GitHub state. Both new operations are GET. The label remove can no longer touch other labels. | Pass |
+| No new operation can mutate GitHub state. The new operation is a GET. The label remove can no longer touch other labels. | Pass |
 | Prose follows unslop. License headers unchanged (no new script). | Planned |
 
 Re-checked after design: no violations, so no Complexity Tracking
@@ -92,9 +92,9 @@ See [contracts/integration-ops.md](contracts/integration-ops.md).
 
 - `git_get_tree`: directory listings with sizes. Replaces every
   `repos_get_content` call on a directory.
-- `repos_get_content_raw`: file text with `Accept:
-  application/vnd.github.raw+json`. Used only after quickstart step 2
-  shows Guild sends the header.
+- `repos_get_content`: an optional `Accept` header parameter
+  (`application/vnd.github.raw+json`) for file text. Used only after
+  quickstart step 2 shows Guild sends it.
 - Narrowed output schemas on `pulls_list_reviews` and
   `pulls_list_review_comments`.
 - `issues_remove_label`: path
