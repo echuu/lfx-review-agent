@@ -273,7 +273,9 @@ finding and every bot comment.
 - **SC-003**: None of the 392 reviews posted between 2026-11-02 18:00
   and 2026-11-04 00:02 UTC would have been declined by the size limits.
 - **SC-004**: A follow-up review on a PR with #4962's history reads at
-  most half of the 2.11 MB that review 5 read.
+  most half of the 2.11 MB that review 5 read. This depends on Guild
+  trimming responses to an output schema (research R6); GraphQL is ruled
+  out (research R5).
 - **SC-005**: No approval is posted on a PR with a changed file the agent
   did not read, unless that file is on the generated-file and lockfile
   list.

@@ -129,9 +129,15 @@ no test has shown that Guild enforces it.
 validation error means the enum is enforced. A GitHub 422 means Guild
 passed the value through; nothing is created either way.
 
-**Decision**: add `graphql_read` only if the probe shows enforcement. If
-it doesn't, GraphQL waits for a read-only token (#19), and R6 uses the
-REST fallback.
+**Result** (2026-11-03, integration 1.0.5, `lfx-one` credential): Guild
+sent the request to
+`/repos/linuxfoundation/lfx-review-agent/issues/comments/6618074477/reactions`
+and GitHub answered 422: "lfx-probe-invalid is not a member of [...]".
+Guild does not enforce body `enum` values.
+
+**Decision**: no `graphql_read`. A GraphQL operation waits for a
+read-only token (#19). Every GraphQL option in R3, R4 and R6 is out.
+See R12 for what this means for the existing pins.
 
 ## R6. Trimming history
 
@@ -156,9 +162,13 @@ Other options:
   `/pulls/{n}/reviews/{id}/comments`. Smaller, but it still carries
   `diff_hunk`, and older bot threads would drop out of reconciliation.
 
-**Decision**: `graphql_read` with the reviews and threads queries if R5
-passes. Narrowed output schemas in 1.0.6 either way. The REST `since`
-read is rejected: it loses history the reconciliation needs.
+**Decision**: GraphQL is out (R5). Narrow the output schemas of the two
+history operations in 1.0.6 and ask Guild whether it trims to them. If
+it does, the history reads shrink without GraphQL. If it doesn't,
+history stays as large as today, and the Phase A tail read and gate A1's
+`review_comments` limit (R8) are the only protection; SC-004 is then not
+met in 0.1.19. The REST `since` read is rejected: it loses history the
+reconciliation needs.
 
 ## R7. Read limits
 
@@ -245,8 +255,38 @@ looks at it either way.
 
 - Agent 0.1.19: all prompt changes (Phase B, plus Phase C prompt use of
   whatever 1.0.6 confirms).
-- Integration 1.0.6: `git_get_tree`, `repos_get_content_raw`, and
-  `graphql_read` if R5 passes; narrowed output schemas on the two history
-  operations. One new ALLOW policy for the new operations.
+- Integration 1.0.6: `git_get_tree` and `repos_get_content_raw`;
+  narrowed output schemas on the two history operations. One new ALLOW
+  policy for the two new operations.
 - Publish order as before: integration, policy, merge, `guild agent
   save --publish --version-number 0.1.19`.
+
+## R12. The existing pins are not enforced
+
+The R5 probe shows that an `enum` in an operation's request body is
+documentation only: Guild sends any value. The integration relies on
+such pins in three places:
+
+| Operation | Pin | What the agent could do instead |
+| --- | --- | --- |
+| `issues_create_reaction` | `content: eyes` | Any of GitHub's eight reactions. Low impact. |
+| `issues_add_labels` (1.0.5) | `labels: [lfx-review-agent-pending]` | Add any label that exists in the repository, or create one. Some labels start workflows: lfx-self-serve's `deploy-preview` deploys the branch to the dev cluster. |
+| `issues_remove_label` (1.0.5) | path `name` pinned to the label | Remove any label, such as one a maintainer set to block a merge. |
+
+Today only the prompt keeps the agent to the pending label. The prompt
+treats PR content as untrusted, but an injected instruction that
+gets past that could add or remove labels as `lfx-one`. The exposure
+starts when an agent version that lists the label tools is published
+(0.1.18); 0.1.17 does not list them in `guild.yaml`.
+
+Options, outside this feature's scope, for the maintainer to decide
+before publishing 0.1.18:
+
+- Pin the remove in the path itself:
+  `DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/lfx-review-agent-pending`
+  with no `name` parameter. That operation can remove only that label.
+  GitHub has no add-one-label path, so the add stays a body value.
+- Ask Guild (Rod Brathwaite) whether a credential policy can restrict
+  parameter values, or whether Guild can enforce request schemas.
+- Accept the add risk for now, since outside contributors' PRs are the
+  main injection source and the agent never approves them.

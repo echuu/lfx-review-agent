@@ -9,32 +9,16 @@ paths and parameters.
 | Operation id | Tool | Request | Used by |
 | --- | --- | --- | --- |
 | `git_get_tree` | `lfx_one_github_git_get_tree` | `GET /repos/{owner}/{repo}/git/trees/{tree_sha}`, where `tree_sha` is `<commit>:<directory>` or a commit SHA for the root | Every directory listing; sizes for the read budget (research R3) |
-| `repos_get_content_raw` | `lfx_one_github_repos_get_content_raw` | `GET /repos/{owner}/{repo}/contents/{path}` with `ref`, and header `Accept` pinned by `enum` to `application/vnd.github.raw+json` | Full-file reads as plain text (R4) |
-| `graphql_read` (only if the enum probe passes) | `lfx_one_github_graphql_read` | `POST /graphql`, body `{query, variables}`, `query` pinned by `enum` to the fixed queries below | Reviews and review threads (R6) |
+| `repos_get_content_raw` | `lfx_one_github_repos_get_content_raw` | `GET /repos/{owner}/{repo}/contents/{path}` with `ref`, and header `Accept` with `enum` `application/vnd.github.raw+json` (documentation only: Guild sends any value, and any value is still a read) | Full-file reads as plain text (R4) |
 
 `git_get_tree` never takes `recursive`: a recursive tree of a large
 repository is megabytes. One directory per call.
 
-## `graphql_read` queries
+## No GraphQL operation
 
-Variables: `owner`, `repo` (strings), `number` (int), `after` (cursor or
-null). The schema allows no other variable and no other `query`.
-
-Reviews:
-
-```graphql
-query($owner:String!,$repo:String!,$number:Int!,$after:String){repository(owner:$owner,name:$repo){pullRequest(number:$number){reviews(first:100,after:$after){pageInfo{hasNextPage endCursor} nodes{databaseId author{login} state body submittedAt commit{oid} url}}}}}
-```
-
-Review threads:
-
-```graphql
-query($owner:String!,$repo:String!,$number:Int!,$after:String){repository(owner:$owner,name:$repo){pullRequest(number:$number){reviewThreads(first:100,after:$after){pageInfo{hasNextPage endCursor} nodes{isResolved isOutdated path line originalLine comments(first:50){nodes{databaseId author{login} body createdAt url}}}}}}}
-```
-
-A thread with more than 50 comments shows its first 50; the recap says
-so. Both queries are read only. A mutation cannot be expressed through
-them.
+Guild does not enforce body `enum` values (research R5), so a
+`POST /graphql` operation could carry any query, mutations included. It
+waits for a read-only token (#19).
 
 ## Narrowed output schemas
 

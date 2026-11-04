@@ -5,7 +5,10 @@ Validation steps for the maintainer. Every Guild command here uses the
 
 ## 1. Enum probe (before implementation, no publish)
 
-Decides whether `graphql_read` ships (research R5). The target is an
+**Done 2026-11-03.** Result: HTTP 422 from GitHub, so Guild does not
+enforce body enums and `graphql_read` is out (research R5, R12).
+
+Decided whether `graphql_read` ships. The target is an
 `lfx-one` comment on merged PR #35. The `content` value is invalid, so
 GitHub creates nothing whatever Guild does. Path values must be strings.
 
@@ -23,8 +26,6 @@ guild integration version test linux-foundation~lfx-one-github \
 | A Guild validation error before any request (names the `enum`) | Guild enforces body enums. `graphql_read` goes into 1.0.6. |
 | HTTP 422 from GitHub ("Validation Failed") | Guild passes values through. No `graphql_read`; R6 waits for a read-only token (#19). |
 
-Record the result and the exact message in `research.md` R5.
-
 ## 2. Test the new operations (after integration 1.0.6 is published)
 
 Create the ALLOW policy first. Run with `--account linux-foundation`.
@@ -37,9 +38,6 @@ Create the ALLOW policy first. Run with `--account linux-foundation`.
   commit: expect plain Markdown (about 22 KB), not JSON with base64. If it
   returns JSON, Guild dropped the header: switch the prompt back to
   `repos_get_content` before merging (plan, Rollout step 3).
-- If present, `graphql_read` with each fixed query on lfx-self-serve#4962:
-  expect about 96 KB (reviews) and 75 KB (threads). Then send a query
-  string that is not in the enum: expect Guild to reject it.
 - `pulls_list_reviews` on #4962: record whether the response shrank to the
   narrowed schema (research R6). Send the result to Guild with the
   question either way.

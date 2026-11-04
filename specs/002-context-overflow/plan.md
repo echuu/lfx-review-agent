@@ -23,10 +23,9 @@ budget and says plainly what it could not read:
   its path (R10).
 - **Plain text** (R4). A new `repos_get_content_raw` operation asks GitHub
   for the raw file, if Guild passes the header.
-- **Trimmed history** (R5, R6). A fixed-query, read-only `graphql_read`
-  operation for reviews and review threads, only if Guild enforces the
-  enum that pins the query. Narrowed output schemas on the two REST
-  history operations show whether Guild trims to schema.
+- **Trimmed history** (R6). Narrowed output schemas on the two REST
+  history operations, if Guild trims responses to them. GraphQL is out:
+  the probe showed Guild does not enforce body enums (R5).
 - **Size check** (R8). A last-resort gate that declines a PR whose diff
   cannot fit, with one notice instead of a start comment.
 
@@ -36,8 +35,7 @@ budget and says plainly what it could not read:
 OpenAPI 3.0.3 integration spec.
 
 **Primary Dependencies**: Guild Native agent runtime; custom integration
-`linux-foundation~lfx-one-github` (1.0.5 to 1.0.6); GitHub REST API, and
-GraphQL if R5 passes.
+`linux-foundation~lfx-one-github` (1.0.5 to 1.0.6); GitHub REST API.
 
 **Storage**: None. State lives on GitHub (comments, reviews, the pending
 label).
@@ -77,7 +75,7 @@ repository's `CLAUDE.md` rules serve as the gates.
 | The integration is published before `guild.yaml` pins it, and the policy exists before the save. | Planned (rollout) |
 | The maintainer runs every Guild command that uses the credential. | Planned (quickstart steps 1, 2, 5) |
 | PR content is untrusted. File paths decide exclusions for unread files only by fixed rules (R10). | Planned |
-| No new operation can mutate GitHub state; `graphql_read` ships only if the enum is enforced. | Planned (R5 gate) |
+| No new operation can mutate GitHub state. Both new operations are GET. | Pass |
 | Prose follows unslop. License headers unchanged (no new script). | Planned |
 
 Re-checked after design: no violations, so no Complexity Tracking
@@ -94,8 +92,6 @@ See [contracts/integration-ops.md](contracts/integration-ops.md).
 - `repos_get_content_raw`: file text with `Accept:
   application/vnd.github.raw+json`. Used only after quickstart step 2
   shows Guild sends the header.
-- `graphql_read`: only if quickstart step 1 shows Guild enforces body
-  enums. Queries: reviews, review threads.
 - Narrowed output schemas on `pulls_list_reviews` and
   `pulls_list_review_comments`.
 
@@ -127,8 +123,7 @@ listed file is named but never withholds approval.
 - **Step 4, Gather the material**: list directories with `git_get_tree`
   (rule files, context). Every full-file read checks size and budget
   first. Rule files keep their caps and count toward the run total. The
-  symlink rule reads mode `120000`. When R6 ships, read reviews and
-  inline comments through `graphql_read`.
+  symlink rule reads mode `120000`.
 - **Step 5a**: new gate 5a.3, "Unread changed files": withhold approval
   with the approval-withheld marker when a patch-less changed file outside
   the R9 list was not read. Same mechanics as 5a.2.
@@ -182,11 +177,11 @@ feature touches the existing files above and adds no script.
 
 ## Rollout
 
-1. Run the enum probe (quickstart step 1). Record the result in
-   `research.md` R5. It decides whether `graphql_read` is in 1.0.6.
+1. Enum probe (quickstart step 1): done 2026-11-03. Guild does not
+   enforce body enums, so `graphql_read` is out (R5).
 2. Implement on this branch and open the PR.
 3. Publish integration 1.0.6, create the ALLOW policy, run quickstart
-   step 2 (tree, raw header, GraphQL if present). If Guild drops the
+   step 2 (tree, raw header, history schemas). If Guild drops the
    `Accept` header, change the prompt to keep `repos_get_content` before
    merging.
 4. Merge, then `guild agent save --publish --version-number 0.1.19`.
@@ -199,7 +194,10 @@ feature touches the existing files above and adds no script.
   (clarified 2026-11-03).
 - **Exclusion check on unread files**: decided from the path (clarified
   2026-11-03).
-- **GraphQL**: depends on the enum probe (R5).
+- **GraphQL**: out until a read-only token exists (#19); the enum probe
+  failed (R5).
+- **Unenforced label pins** (R12): not part of this feature. The
+  maintainer decides before publishing 0.1.18.
 - **Plain text**: depends on Guild sending the header (R4).
 - **Output-schema trimming**: a question for Guild (R6); 1.0.6 shows the
   answer either way.
