@@ -13,7 +13,7 @@ the agent is a prompt plus a Guild manifest.
 | File | Role |
 | --- | --- |
 | `PROMPT.md` | The agent's system prompt. All behavior lives here. |
-| `guild.yaml` | Guild manifest: the `lfx-one-github` integration and its 20 tools. |
+| `guild.yaml` | Guild manifest: the `lfx-one-github` integration and its 21 tools. |
 | `README.md` | Setup: onboarding steps, workspace variables, triggers, credential policy, test checklist. |
 | `scripts/onboard-repo.sh` | Creates a repository's webhook triggers (onboarding step 4). |
 | `scripts/sweep-trigger.sh` | Sets the hourly sweep trigger's repository list from the webhook triggers. |
@@ -40,13 +40,19 @@ through `.git/info/exclude`. Never commit them.
 - Comment and review markers (`<!-- lfx-review-agent:review -->`,
   `:review-of`, `:session`, `:superseded`, `:cap`, `:debounce`, `:skip`,
   `:request`, `:abandoned`, `:approval-withheld`, `:excluded`, `:summary`,
-  `:stalled`)
+  `:stalled`, `:too-large`)
   are read back by later runs. Changing one breaks cycle state on open PRs.
   The same holds for the `lfx-review-agent-pending` label and the
   `lfx_review_agent_event` sweep input key.
 - To exclude another area from auto-review, add a row to the "Review
-  exclusions" table in `PROMPT.md`. Never rename a released `Rule` value:
-  open PRs carry it in their exclusion notice.
+  exclusions" table in `PROMPT.md`, with its path name parts. Never rename
+  a released `Rule` value: open PRs carry it in their exclusion notice.
+- To mark another generated file or lockfile, add a row to "Generated
+  files and lockfiles" in `PROMPT.md`. A file listed there that is too
+  large to read never withholds approval.
+- The read limits live in the "Read budget" table in `PROMPT.md`.
+- Guild does not enforce `enum` values in a request. To fix a value, put
+  it in the operation's path, as `issues_remove_label` does.
 - Handling a new webhook event in Step 0 means adding it to `TRIGGERS` in
   `scripts/onboard-repo.sh` and to the trigger table in `README.md`, then
   rerunning the script for every onboarded repository.
