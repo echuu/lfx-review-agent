@@ -172,8 +172,11 @@ Other options:
   `/pulls/{n}/reviews/{id}/comments`. Smaller, but it still carries
   `diff_hunk`, and older bot threads would drop out of reconciliation.
 
-**Decision**: GraphQL is out (R5). Narrow the output schemas of the two
-history operations in 1.0.6 and ask Guild whether it trims to them. If
+**Decision**: GraphQL is out (R5). The narrowed output schemas shipped
+in 1.0.6 were dropped from 1.0.7 to keep the spec under Guild's generator
+size limit (R11), so history trimming waits for Guild's answer. The
+original plan was to narrow the output schemas of the two history
+operations and ask Guild whether it trims to them. If
 it does, the history reads shrink without GraphQL. If it doesn't,
 history stays as large as today, and the Phase A tail read and gate A1's
 `review_comments` limit (R8) are the only protection; SC-004 is then not
@@ -276,12 +279,16 @@ looks at it either way.
   for `git_get_tree`.
 - Publish order as before: integration, policy, merge, `guild agent
   save --publish --version-number 0.1.20`.
-- Outcome (2026-11-04): 1.0.6 was built and published before Guild
-  finished generating its operations in the background, so it has 18 of
-  21 (no `search_issues`, `users_get_by_username` or
-  `issues_remove_label`). A published version can't be removed, so 1.0.6
-  must never be pinned. 1.0.7 is the same spec, published after the draft
-  listed all 21. Agent 0.1.20 was never published; 0.1.21 pins 1.0.7.
+- Outcome (2026-11-04): Guild's operation generator dropped the last
+  three operations of the 16.8 KB 1.0.6 spec (`issues_remove_label`,
+  `search_issues`, `users_get_by_username`). A second draft from the same
+  file gave the same 18, and a separate 3 KB spec with only those three
+  added nothing to the draft. Generation stopped after operation 18, about
+  15.4 KB into the file, while the 13.4 KB 1.0.5 spec generated all 20. A
+  published version can't be removed, so 1.0.6 must never be pinned. 1.0.7
+  is a trimmed spec (13.6 KB): shorter comments and descriptions, and
+  without the narrowed history schemas (R6). Agent 0.1.20 was never
+  published; 0.1.21 pins 1.0.7.
 
 ## R12. The existing pins are not enforced
 

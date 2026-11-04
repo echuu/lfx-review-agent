@@ -42,23 +42,12 @@ Guild does not enforce body `enum` values (research R5), so a
 `POST /graphql` operation could carry any query, mutations included. It
 waits for a read-only token (#19).
 
-## Narrowed output schemas
+## Narrowed output schemas (dropped)
 
-`pulls_list_reviews` and `pulls_list_review_comments` get output schemas
-that list only the fields the prompt reads. If Guild trims responses to
-the schema, the reads shrink (research R6); if it doesn't, nothing
-changes. Because a trim drops every field not listed, each schema keeps
-every field any step reads:
-
-- Reviews: `id`, `state`, `body`, `html_url`, `user.login`, `commit_id`,
-  `submitted_at`.
-- Inline review comments: `id`, `pull_request_review_id`,
-  `in_reply_to_id`, `user.login`, `body`, `path`, `line`, `start_line`,
-  `original_line`, `side`, `commit_id`, `html_url`, `created_at`,
-  `updated_at`.
-
-The implementation re-checks these lists against every use in
-`PROMPT.md` before publishing.
+1.0.6 gave `pulls_list_reviews` and `pulls_list_review_comments` output
+schemas listing only the fields the prompt reads. 1.0.7 drops them to stay
+under Guild's generator size limit (research R11). Both operations return
+`OkList` again.
 
 ## Constraints
 
