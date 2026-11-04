@@ -16,7 +16,12 @@ A missing field counts as 0, so the check errs toward reviewing.
 
 When over:
 
-1. Run the approval guard, as for gates A, B and C.
+1. Run the approval guard in its gate A1 form: no Step 3.2 check (it
+   reads every patch of the oversized diff). If there is a live own
+   approval, revoke it with a `REQUEST_CHANGES` review, no inline
+   comments, whose body starts with `<!-- lfx-review-agent:too-large -->`.
+   The approval guard counts that marker; Step 2 does not, so cycle state
+   is unchanged.
 2. If a `too-large-notice` is newer than the PR's most recent session
    comment (any `session-start`, `session-summary` or `abandoned`), stop
    silently. A `re-review` gets a skip notice.

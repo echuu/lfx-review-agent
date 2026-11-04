@@ -623,6 +623,22 @@ say so up front instead.
   lines; the limit is 20,000`. For a `re-review`, add the `request` line
   after the marker, as in gate A.
 
+Before either stop, run the approval guard (below), but in its gate A1
+form: do not run the Step 3.2 check, which reads every patch of the very
+diff this gate declines and can overflow the run. Instead, if there is a
+live own approval, revoke it without reading the diff: call
+`lfx_one_github_pulls_create_review` with `event: "REQUEST_CHANGES"`,
+`commit_id: head_sha`, no inline comments, and this body:
+
+```text
+<!-- lfx-review-agent:too-large -->
+This pull request is now too large for an automated review (<reason>), so my earlier approval no longer counts. A human review is needed.
+```
+
+A pull request too large to review must not keep the agent's approval.
+If the submit fails, continue with the gate and report the failure in
+Step 7.
+
 **Approval guard for gates A, A1, B and C.** These gates, and the sweep's
 abandoned-reviews stop, stop a run before Step 3.2, so on their own they
 would leave an earlier approval standing on excluded changes in a
@@ -631,14 +647,16 @@ repository that keeps stale approvals. Before one of them stops a run
 **live own approval** in the review list (fetch it as Step 1.5 does if it is not
 fetched yet). Take the own reviews (`user.login
 == "{{env.REVIEWER_LOGIN}}"`) whose `body` contains
-`<!-- lfx-review-agent:review -->` or `<!-- lfx-review-agent:excluded`
-(the Step 3.2 revoking review), with `state` `APPROVED` or
+`<!-- lfx-review-agent:review -->`, `<!-- lfx-review-agent:excluded`
+(the Step 3.2 revoking review) or `<!-- lfx-review-agent:too-large -->`
+(the gate A1 revoking review), with `state` `APPROVED` or
 `CHANGES_REQUESTED`, ignoring `COMMENTED` and `DISMISSED`. As in Step 2,
 the markers keep out reviews by other tools that share the credential.
 There is a live own approval when the most recent of them is `APPROVED`.
 This is not Step 2's latest terminal review: an approval-withheld
-`COMMENTED` review does not replace an approval on GitHub. If there is a
-live own approval, run the Step 3.2 check, whether or not HEAD moved
+`COMMENTED` review does not replace an approval on GitHub. Gate A1 uses
+its own form of this guard (see gate A1). For the other stops, if there
+is a live own approval, run the Step 3.2 check, whether or not HEAD moved
 since the approval (it may predate the exclusion rule). On a match, follow
 Step 3.2 items 2 to 4 instead of the gate's own action: revoke the
 approval, post the exclusion notice, and stop. Without a match, or without
@@ -2006,7 +2024,9 @@ without reviewing, state plainly which condition applied and take no further
 action. For a run that superseded its own duplicate notice in Step 1.5, say so
 and link the earlier notice. For a run that stopped at gate A1, report
 `Review not started: PR too large (<reason>)` and link the notice, or say
-an earlier notice still applies. For a run that stopped at Step 3.2, report
+an earlier notice still applies. Say whether it revoked an earlier
+approval (with the review's `html_url`) or the revoke failed. For a run
+that stopped at Step 3.2, report
 `Review not started: excluded (<rule>[,<rule>])`, link the exclusion
 notice, and say whether an earlier approval was revoked (with the review's
 `html_url`). For a run that stopped at Step 5c because the PR was merged,
