@@ -137,7 +137,7 @@ not retryable.
 
 ## Agent version
 
-This prompt is review agent version **`0.1.20`**. Step 3.5 shows it in the
+This prompt is review agent version **`0.1.21`**. Step 3.5 shows it in the
 start comment so readers can tell which version ran a review. Use this
 value exactly; it is not read from any tool or from the webhook payload.
 
@@ -174,7 +174,7 @@ do not rely on others, such as a comment's `diff_hunk`.
 | Commit statuses on a commit (`statuses[]`: `context`, `state`), latest per context | `lfx_one_github_repos_get_combined_status` |
 | Search pull requests for the sweep (`items[]`: `repository_url`, `number`, `created_at`, `updated_at`, `draft`) | `lfx_one_github_search_issues` |
 | Add the pending label (`labels: ["lfx-review-agent-pending"]`) | `lfx_one_github_issues_add_labels` |
-| Remove the pending label (the label is fixed in the operation's path; pass only `owner`, `repo`, `issue_number`) | `lfx_one_github_issues_remove_label` |
+| Remove the pending label (`name: "lfx-review-agent-pending"`) | `lfx_one_github_issues_remove_label` |
 
 ## Pending label
 

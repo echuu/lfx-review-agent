@@ -51,8 +51,10 @@ through `.git/info/exclude`. Never commit them.
   files and lockfiles" in `PROMPT.md`. A file listed there that is too
   large to read never withholds approval.
 - The read limits live in the "Read budget" table in `PROMPT.md`.
-- Guild does not enforce `enum` values in a request. To fix a value, put
-  it in the operation's path, as `issues_remove_label` does.
+- Guild does not enforce `enum` values in a request. A fixed value in an
+  operation's path broke Guild's operation generation (1.0.6): generation
+  stops at the first failing operation, so check that `operation list`
+  shows every operation before `version build`.
 - Handling a new webhook event in Step 0 means adding it to `TRIGGERS` in
   `scripts/onboard-repo.sh` and to the trigger table in `README.md`, then
   rerunning the script for every onboarded repository.

@@ -1,26 +1,15 @@
 # Copyright The Linux Foundation and each contributor to LFX.
 # SPDX-License-Identifier: MIT
 
-# Operations for the custom Guild integration that acts as the `lfx-one`
-# GitHub account. It holds the 21 operations the review agent uses: the 12
-# it first used from `guildai~github`, a reaction, four reads for CI
-# checks and required checks, three for the hourly sweep (an issue
-# search, and adding and removing the one pending label), and a git tree
-# read for file sizes before reads (1.0.6). The credential is a
-# fine-grained token owned by `lfx-one`, connected with
-# `guild integration connect`. Never put the token in this file.
-#
-# Guild does not enforce `enum` values in a request (probe on 1.0.5,
-# 2026-11-03): an enum here documents the intended value only. Where a
-# value must be fixed, put it in the path, as `issues_remove_label` does.
-#
-# Guild names each tool `<service>_<operation id>`, so the tools are
-# `lfx_one_github_<operation id>`. guild.yaml and PROMPT.md use those names.
+# Operations the LFX review agent performs as `lfx-one`; tools are
+# `lfx_one_github_<operation id>`. Never pin 1.0.6: Guild's generator
+# stopped at its path-pinned issues_remove_label and dropped every later
+# operation. Guild does not enforce request enums.
 
 openapi: 3.0.3
 info:
   title: LFX One GitHub
-  version: 1.0.6
+  version: 1.0.7
   description: GitHub REST operations the LFX review agent performs as lfx-one.
 servers:
   - url: https://api.github.com
@@ -79,57 +68,6 @@ components:
       content:
         application/json:
           schema: { type: array, items: { type: object } }
-    ReviewList:
-      description: >-
-        Reviews on a pull request. Lists only the fields PROMPT.md reads, in
-        case Guild trims a response to its schema.
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              type: object
-              properties:
-                id: { type: integer }
-                state: { type: string }
-                body: { type: string, nullable: true }
-                html_url: { type: string }
-                commit_id: { type: string, nullable: true }
-                submitted_at: { type: string, nullable: true }
-                user:
-                  type: object
-                  nullable: true
-                  properties:
-                    login: { type: string }
-    ReviewCommentList:
-      description: >-
-        Inline review comments on a pull request. Lists only the fields
-        PROMPT.md reads, in case Guild trims a response to its schema.
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              type: object
-              properties:
-                id: { type: integer }
-                pull_request_review_id: { type: integer, nullable: true }
-                in_reply_to_id: { type: integer, nullable: true }
-                body: { type: string }
-                path: { type: string }
-                line: { type: integer, nullable: true }
-                start_line: { type: integer, nullable: true }
-                original_line: { type: integer, nullable: true }
-                side: { type: string, nullable: true }
-                commit_id: { type: string }
-                html_url: { type: string }
-                created_at: { type: string }
-                updated_at: { type: string }
-                user:
-                  type: object
-                  nullable: true
-                  properties:
-                    login: { type: string }
 
 paths:
   /repos/{owner}/{repo}/pulls/{pull_number}:
@@ -177,7 +115,7 @@ paths:
         - $ref: "#/components/parameters/per_page"
         - $ref: "#/components/parameters/page"
       responses:
-        "200": { $ref: "#/components/responses/ReviewList" }
+        "200": { $ref: "#/components/responses/OkList" }
     post:
       operationId: pulls_create_review
       summary: Submit a review on a pull request
@@ -213,7 +151,7 @@ paths:
         - $ref: "#/components/parameters/per_page"
         - $ref: "#/components/parameters/page"
       responses:
-        "200": { $ref: "#/components/responses/ReviewCommentList" }
+        "200": { $ref: "#/components/responses/OkList" }
   /repos/{owner}/{repo}/issues/{issue_number}/comments:
     get:
       operationId: issues_list_comments
@@ -303,10 +241,7 @@ paths:
     get:
       operationId: repos_get_content
       summary: Get a file's contents
-      description: >-
-        With the Accept header set to application/vnd.github.raw+json, a
-        file comes back as its text instead of JSON with base64 content.
-        Directories are listed with git_get_tree, not here.
+      description: Accept application/vnd.github.raw+json returns the file's text.
       parameters:
         - $ref: "#/components/parameters/owner"
         - $ref: "#/components/parameters/repo"
@@ -317,18 +252,13 @@ paths:
         - name: ref
           in: query
           schema: { type: string }
-        # OpenAPI 3.0 says a header parameter named Accept is ignored, so
-        # the raw media type is also declared on the 200 response below.
-        # Which one Guild honors is checked before merge (quickstart step 2).
         - name: Accept
           in: header
           required: false
           schema: { type: string, enum: ["application/vnd.github.raw+json"] }
       responses:
         "200":
-          description: >-
-            A file as JSON with base64 content, or as its text with the raw
-            media type.
+          description: JSON with base64 content, or the raw text
           content:
             application/json:
               schema: { type: object }
@@ -338,10 +268,7 @@ paths:
     get:
       operationId: git_get_tree
       summary: List one directory's entries with sizes
-      description: >-
-        tree_sha is "<commit>:<directory>", or a commit SHA for the root.
-        Entries carry path, mode, type, sha and size; mode 120000 is a
-        symlink. Never recursive.
+      description: tree_sha is "<commit>:<directory>", or a commit SHA for the root.
       parameters:
         - $ref: "#/components/parameters/owner"
         - $ref: "#/components/parameters/repo"
@@ -434,17 +361,19 @@ paths:
                   items: { type: string, enum: ["lfx-review-agent-pending"] }
       responses:
         "200": { $ref: "#/components/responses/OkList" }
-  /repos/{owner}/{repo}/issues/{issue_number}/labels/lfx-review-agent-pending:
+  /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}:
     delete:
       operationId: issues_remove_label
       summary: Remove the pending label from an issue or pull request
-      description: >-
-        Returns 404 when the label is not on the issue. The label name is
-        part of the path, so this operation cannot remove any other label.
+      description: 404 when the label is not on the issue.
       parameters:
         - $ref: "#/components/parameters/owner"
         - $ref: "#/components/parameters/repo"
         - $ref: "#/components/parameters/issue_number"
+        - name: name
+          in: path
+          required: true
+          schema: { type: string, enum: ["lfx-review-agent-pending"] }
       responses:
         "200": { $ref: "#/components/responses/OkList" }
         "404": { $ref: "#/components/responses/Ok" }

@@ -172,8 +172,12 @@ Other options:
   `/pulls/{n}/reviews/{id}/comments`. Smaller, but it still carries
   `diff_hunk`, and older bot threads would drop out of reconciliation.
 
-**Decision**: GraphQL is out (R5). Narrow the output schemas of the two
-history operations in 1.0.6 and ask Guild whether it trims to them. If
+**Decision**: GraphQL is out (R5). The narrowed output schemas shipped
+in 1.0.6 were dropped from 1.0.7 to keep the spec under Guild's generator
+limit we suspected (R11; the real cause was the path-pinned remove), so
+history trimming waits for Guild's answer. The
+original plan was to narrow the output schemas of the two history
+operations and ask Guild whether it trims to them. If
 it does, the history reads shrink without GraphQL. If it doesn't,
 history stays as large as today, and the Phase A tail read and gate A1's
 `review_comments` limit (R8) are the only protection; SC-004 is then not
@@ -276,6 +280,18 @@ looks at it either way.
   for `git_get_tree`.
 - Publish order as before: integration, policy, merge, `guild agent
   save --publish --version-number 0.1.20`.
+- Outcome (2026-11-04): Guild's operation generator dropped the last
+  three operations of the 1.0.6 spec (`issues_remove_label`,
+  `search_issues`, `users_get_by_username`). Three drafts gave the same 18:
+  the full spec, a 13.6 KB trimmed spec, and nothing at all from a 3 KB
+  spec holding only those three. Size is not the cause. Generation runs in
+  file order and stops at the first failure, which is the path-pinned
+  `issues_remove_label` (operation 19, and the first operation in the
+  small spec); the two after it are lost with it. A published version
+  can't be removed, so 1.0.6 must never be pinned. 1.0.7 restores the
+  1.0.5 form of `issues_remove_label` (R12), and also keeps the shorter
+  comments and the dropped narrowed history schemas (R6). Agent 0.1.20
+  was never published; 0.1.21 pins 1.0.7.
 
 ## R12. The existing pins are not enforced
 
@@ -307,6 +323,11 @@ Options considered (0.1.18 was already published when this was found,
   parameter values, or whether Guild can enforce request schemas.
 - Accept the add risk for now, since outside contributors' PRs are the
   main injection source and the agent never approves them.
+
+**Outcome** (2026-11-04): the path-pinned remove broke Guild's operation
+generation (R11), so 1.0.7 restores the `{name}` parameter with its
+unenforced enum, as in 1.0.5. The maintainer chose to revert and ask
+Guild why. The earlier decision follows.
 
 **Decision** (maintainer, 2026-11-03): pin the remove in the path, in
 integration 1.0.6. `issues_remove_label` keeps its operation id and tool

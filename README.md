@@ -296,7 +296,7 @@ guild credentials policy delete <allow-all-policy-id>
 There is no command to update a policy. To allow a new operation on an
 existing credential, create another `ALLOW` policy with only the new
 operations, for example the CI check reads added in 0.1.15, the sweep
-operations added in 0.1.18, and the tree read added in 0.1.20:
+operations added in 0.1.18, and the tree read added in 0.1.21:
 
 ```bash
 guild credentials policy create "$CRED" \
@@ -319,11 +319,11 @@ guild credentials policy create "$CRED" \
 ```
 
 Guild does not enforce `enum` values in a request: an enum in the
-integration spec documents the intended value only. Since integration
-1.0.6, `issues_remove_label` has the label name in its path, so it can
-remove only `lfx-review-agent-pending`. `issues_add_labels` and
-`issues_create_reaction` still rely on the prompt to send the intended
-value.
+integration spec documents the intended value only. `issues_add_labels`,
+`issues_remove_label` and `issues_create_reaction` rely on the prompt to
+send the intended value. Putting the label name in the remove operation's
+path broke Guild's operation generation (1.0.6), so 1.0.7 keeps the
+`{name}` parameter.
 
 `--workspaces` takes a UUID or `<owner>~<name>`, not a bare workspace name.
 If the credential is deleted and reconnected, its policies are gone and this
