@@ -19,21 +19,24 @@ once: it cannot post a summary, a review, or a notice. Guild does not
 retry it. The start comment stays up with no report, and the author sees
 nothing for at least 45 minutes.
 
-Between the 0.1.16 release (2026-11-02) and 2026-11-03, 3 of 299 webhook
-runs ended this way:
+Of the 625 webhook runs between 2026-11-02 18:00 and 2026-11-04 00:02
+UTC (0.1.16 and 0.1.17), 5 ended this way (sizes are the tool output each
+run read; see research R1):
 
-| PR | Prompt size | What filled it |
+| PR | Tool output | What filled it |
 | --- | --- | --- |
-| lfx-self-serve#4962, review 5 | 1,041,163 tokens | PR history: changed files with patches (813 KB), inline review comments (435 KB), reviews read twice (177 KB each), commits (106 KB) |
-| lfx-v2-campaign-service#472, review 3 | 1,456,008 tokens | One read of a generated 1.3 MB file whose patch GitHub omitted |
-| lf-dbt#3177, review 2 | 1,936,920 tokens | One file whose patch GitHub omitted, read in full at two commits (1.0 MB and 0.9 MB) |
+| lfx-self-serve#4989 | 1.17 MB | Two full reads of large source files for context (593 KB and 215 KB responses); the PR changed 8 files |
+| lfx-crowdfunding#449 | 1.71 MB | `pnpm-lock.yaml`, patch omitted, read at two commits (830 KB and 819 KB) |
+| lfx-v2-campaign-service#472 | 1.68 MB | Generated `gen/http/openapi3.json`, patch omitted (a one-line 940 KB file), read once (1.3 MB) |
+| lf-dbt#3177 | 2.20 MB | A dbt test file, patch omitted, read at two commits (1.0 MB and 0.9 MB) |
+| lfx-self-serve#4962, review 5 | 2.11 MB | PR history: changed files with patches (813 KB), inline review comments (435 KB), reviews read twice (177 KB each), commits (106 KB) |
 
 Two causes, two fixes:
 
-- **One file too large.** When GitHub omits a file's patch, the prompt
-  reads the whole file, at both ends of the diff, with no size limit. One
-  file can fill the context. Even when it fits, the model has to find the
-  changes by comparing two large copies, which it does poorly.
+- **One file too large (4 of 5).** The prompt reads whole files with no
+  size limit: a changed file whose patch GitHub omitted (at both ends of
+  the diff), and any file read for context. One read can fill the
+  context. Directory listings are large too: one listing was 424 KB.
 - **Too much history.** On a large PR with many review rounds, the
   history the agent reads adds up. Most of it is not the history itself:
   GitHub's responses wrap it in fields the review never uses. On #4962,
@@ -56,10 +59,14 @@ Two causes, two fixes:
   No, for a fixed list of known patterns. Name it as not reviewed line by
   line; its source is still reviewed. Any other unread file withholds
   approval.
+- Q: How does the exclusion check decide a changed file too large to
+  read? → A: From its path. A generated file or lockfile on the list is
+  never a match; any other unread file is a match only if its path points
+  at the excluded area.
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - A PR too large to review gets a clear notice (Priority: P1)
+### User Story 1 - A PR too large to review gets a clear notice (Priority: P2)
 
 A PR author pushes to a PR that is too large for one review run. Today
 the agent posts "I'm starting review N", fails, and leaves that comment
@@ -67,9 +74,11 @@ for 45 minutes or more. Instead, the agent sees before it starts that the
 PR is over the limit, posts no start comment, and posts one notice: the
 PR is too large for automated review, and a human review is needed.
 
-**Why this priority**: This is the fallback for every other story. It
-turns a silent failure into a clear next step, and it works even before
-the cheaper reads in Stories 2 and 3 ship.
+**Why this priority**: This is the last resort behind Stories 2 and 3.
+It would not have stopped any of the 5 observed overflows (research R1):
+those came from single reads and from history, which Stories 2 and 3
+fix. It stops a PR whose diff alone is too large for one run, and turns
+that case into a clear next step instead of a silent failure.
 
 **Independent Test**: On a test PR over the limit, push a commit. Confirm
 one notice, no start comment, no review, and that a second push posts no
@@ -96,13 +105,15 @@ second notice.
 ### User Story 2 - One huge file does not sink the review (Priority: P1)
 
 A PR changes a file so large that GitHub leaves out its patch, such as a
-generated API description or a large test fixture. Today the agent reads
-the whole file at both commits and can overflow. Instead, it reviews
-every other file, names the large file at the top of the summary as not
-reviewed, and withholds approval, so a human must look at that file.
+generated API description, a lockfile or a large test fixture. Or the
+agent wants a large file for context. Today it reads the whole file, at
+both commits for a changed file, and can overflow. Instead, it checks a
+file's size before reading it and stays within a per-file and per-run
+limit. A changed file it could not review is named at the top of the
+summary, and approval is withheld so a human looks at it.
 
-**Why this priority**: Two of the three failures were this case, and a
-single file triggers it on an otherwise small PR.
+**Why this priority**: Four of the five failures were this case, and a
+single file triggers it on an otherwise small PR (#4989 changed 8 files).
 
 **Independent Test**: On a test PR that changes one file too large for
 GitHub to show a patch and one normal file, confirm the review covers the
@@ -123,6 +134,13 @@ normal file, names the large file, and is not an approval.
    reviews it as today.
 4. **Given** a later push that no longer changes the large file, **When**
    the agent reviews, **Then** approval is no longer withheld for it.
+5. **Given** a changed file that has a patch but is too large to read
+   whole for context, **When** the agent reviews, **Then** it reviews the
+   patch, does not read the whole file, names it in the recap, and does
+   not withhold approval for it.
+6. **Given** a file the agent wants only for context that is over the
+   limit, **When** the agent reviews, **Then** it skips the read and names
+   the file in the recap.
 
 ---
 
@@ -139,8 +157,8 @@ it costs less per run.
 
 **Independent Test**: Run a follow-up review on a PR with history like
 that of #4962. Compare the total tool output with the 2.11 MB that
-review 5 read, and confirm the review still reconciles every prior finding and
-every bot comment.
+review 5 read, and confirm the review still reconciles every prior
+finding and every bot comment.
 
 **Acceptance Scenarios**:
 
@@ -164,8 +182,9 @@ every bot comment.
   withheld once, listing all of them.
 - A large file is deleted by the PR: there is nothing new to review in
   it. It is named as deleted, and approval is not withheld for it.
-- A large file is generated (for example Goa's `gen/http/openapi3.json`)
-  or a lockfile (`package-lock.json`, `yarn.lock`, `go.sum`): if it
+- A large file is generated (for example Goa's `gen/http/openapi3.json`
+  and its `cmd/*/kodata/gen/http/` copies) or a lockfile
+  (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `go.sum`): if it
   matches the fixed list of known patterns, it is named as not reviewed
   line by line, and approval is not withheld for it. Its source (the Goa
   design files, `package.json`, `go.mod`) is still reviewed. A large file
@@ -194,16 +213,22 @@ every bot comment.
   stays over the limit, and MUST NOT count toward the 10-review limit.
 - **FR-004**: A PR that drops back under the limits MUST be reviewed as
   usual on its next event.
-- **FR-005**: The limits MUST be set so that none of the successful runs
-  since 0.1.16 would have been stopped by them, and every run that
-  overflowed on PR history would have been.
-- **FR-006**: The agent MUST NOT read a changed file in full when that
-  file is over a per-file read limit. It MUST review the rest of the PR.
-- **FR-007**: A review that skipped a changed file under FR-006 MUST name
-  each such file at the top of the summary and MUST NOT approve, except
-  as FR-013 allows. When it
-  would otherwise approve, it MUST post a COMMENT review marked as
-  approval withheld, like a failed required check.
+- **FR-005**: The limits MUST be above the largest PR any run reviewed
+  successfully between 2026-11-02 18:00 and 2026-11-04 00:02 UTC (13,153
+  changed lines, 118 files, 73 inline review comments), so none of those
+  392 reviews would have been declined. No limit can separate a PR that
+  fits from one that overflows by a few comments (#4962 reviews 4 and 5);
+  that case is left to Story 3 and the Phase A stalled notice.
+- **FR-006**: The agent MUST know a file's size before reading it whole,
+  and MUST NOT read a file over a per-file limit, or past a per-run total.
+  This covers every full-file read: changed files without a patch, and
+  files read for context. It MUST review the rest of the PR.
+- **FR-007**: A review that could not read a changed file whose patch
+  GitHub omitted MUST name each such file at the top of the summary and
+  MUST NOT approve, except as FR-013 allows. When it would otherwise
+  approve, it MUST post a COMMENT review marked as approval withheld,
+  like a failed required check. A changed file that has a patch is
+  reviewed from its patch and never withholds approval for size.
 - **FR-008**: A file whose patch GitHub omitted MUST be read at the PR's
   head only, not at both ends of the diff.
 - **FR-009**: File contents the agent reads MUST arrive as plain text,
@@ -220,6 +245,12 @@ every bot comment.
   and lockfile patterns MUST be named as not reviewed line by line and
   MUST NOT withhold approval on its own. The list MUST live in the prompt
   so maintainers can extend it, like the review exclusions.
+- **FR-014**: The exclusion check MUST decide a changed file it could not
+  read from the file's path: a file on the FR-013 list is never a match,
+  and any other unread file is a match only if its path points at the
+  excluded area.
+- **FR-015**: A directory listing MUST return each entry's name, type and
+  size without per-entry links and URLs.
 
 ### Key Entities
 
@@ -239,8 +270,8 @@ every bot comment.
   notice that says what to do.
 - **SC-002**: Every PR the agent declines for size gets its notice within
   5 minutes of the event, with no start comment left behind.
-- **SC-003**: None of the 296 successful runs since 0.1.16 would have been
-  declined by the size limits.
+- **SC-003**: None of the 392 reviews posted between 2026-11-02 18:00
+  and 2026-11-04 00:02 UTC would have been declined by the size limits.
 - **SC-004**: A follow-up review on a PR with #4962's history reads at
   most half of the 2.11 MB that review 5 read.
 - **SC-005**: No approval is posted on a PR with a changed file the agent
