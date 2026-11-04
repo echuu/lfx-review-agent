@@ -1683,20 +1683,34 @@ a lifted exclusion.
 
 **Check for a gate A1 revoke.** Gate A1 runs before gate B, so another
 run (a `re-review` or a sweep) can decline the PR as too large and revoke
-an approval while this one reviews. Using the same tail read, if an own
-review whose `body` contains `<!-- lfx-review-agent:too-large -->` has
-`submitted_at` at or after this run's `started`, the PR is not excluded
-and this run still submits, but it must not restore that approval. An
-`APPROVE` or approval-withheld verdict becomes a `COMMENT` with the
-approval-withheld marker and this note in the review body and the Step 6
-Decision:
+an approval while this one reviews. The PR **became too large** during
+this review if either holds:
+
+- Using the same tail read, an own review whose `body` contains
+  `<!-- lfx-review-agent:too-large -->` has `submitted_at` at or after
+  this run's `started`.
+- The most recent `lfx_one_github_pulls_get` response (at the top of
+  5c, or before a submit retry) is over a gate A1 limit (`additions +
+  deletions`, `changed_files` or `review_comments`; see "Read budget"),
+  for example after a retarget.
+
+The PR is not excluded and this run still submits, but it must not
+approve. An `APPROVE` or approval-withheld verdict becomes a `COMMENT`
+with the approval-withheld marker and this note in the review body and
+the Step 6 Decision:
 
 ```text
 This pull request became too large for an automated review while this review ran, so I can't approve it. A human review is needed.
 ```
 
-A `COMMENT` does not replace the revoke on GitHub, so the revoke stays in
-force. A `REQUEST_CHANGES` verdict stands.
+If an earlier own approval is still live (as the Step 1.5 approval guard
+defines it) and no gate A1 revoke was found, submit `REQUEST_CHANGES`
+with the gate A1 revoke body instead, so a pull request too large to
+review does not keep the agent's approval. A `COMMENT` does not replace a
+revoke on GitHub, so a revoke another run posted stays in force. A
+`REQUEST_CHANGES` verdict stands. When the PR became too large, skip the
+changed-diff check below: its Step 3.2 rerun would read every patch of
+the oversized diff.
 
 **Check for a changed diff.** The PR diff can change without a new HEAD:
 a retarget fires an `edited` event that Step 0 ignores, and a merge of
@@ -1741,9 +1755,12 @@ If `head.sha` still equals `head_sha`, submit as below. If it differs
 Call `lfx_one_github_pulls_create_review` once, with:
 
 - `event`: the verdict from 5a (`APPROVE` or `REQUEST_CHANGES`; `COMMENT`
-  only when 5a.1, 5a.2 or 5a.3 withheld approval or `head_moved` blocked
-  an approval). 5a.3 also turns the event into `REQUEST_CHANGES` when it
-  found unread files and there is a live own approval.
+  only when 5a.1, 5a.2 or 5a.3 withheld approval, the PR became too large
+  (gate A1 revoke check), or `head_moved` blocked an approval). 5a.3, and
+  the gate A1 revoke check when a live own approval remains, also turn
+  the event into `REQUEST_CHANGES`. When `head_moved` applies too, its
+  rules decide the event and the marker (a plain `COMMENT`, not
+  approval-withheld), and the too-large note is still added.
 - `commit_id`: `head_sha`, the SHA actually reviewed.
 - `body`: always starts with `<!-- lfx-review-agent:review -->` on the
   first line; Step 2 of later runs counts only reviews that carry it. On
@@ -1880,6 +1897,8 @@ the top short: some readers stop there.
      - ⚠️ **Review passed, changed files not read** (only when 5a.3
        withheld approval and neither 5a.1 nor 5a.2 did, including when it
        submitted `REQUEST_CHANGES` to replace an earlier approval)
+     - ⚠️ **Review passed, pull request became too large** (only when the
+       5c gate A1 revoke check withheld approval and no 5a gate did)
      - ⏸️ **Not approved, new commits pushed during review** (only when
        5c found `head_moved` and the verdict was not `REQUEST_CHANGES`)
      - 🔴 **Needs changes before approval**
@@ -2031,9 +2050,10 @@ Review posted: <verdict>
 - PR: #<number>: <title>
 - Summary comment: <html_url>
 - Formal review (with inline comments): <html_url>
-- Approval withheld (only when 5a.1, 5a.2 or 5a.3 withheld it): the PR
-  author isn't a verified org member, a required check failed (name it),
-  or a changed file couldn't be read (name it)
+- Approval withheld (only when 5a.1, 5a.2, 5a.3 or the 5c gate A1
+  revoke check withheld it): the PR author isn't a verified org member,
+  a required check failed (name it), a changed file couldn't be read
+  (name it), or the PR became too large during the review
 ```
 
 If either URL is missing, say so explicitly and link the PR itself instead
