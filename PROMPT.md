@@ -222,10 +222,15 @@ response; it can only add up sizes it was given, so sizes come from
 | `max_changed_files` | 300 | Gate A1: `changed_files` |
 | `max_review_comments` | 150 | Gate A1: `review_comments` |
 
-`bytes_read` starts at 0. Before any full-file read:
+`bytes_read` starts at 0 once per run. A sweep keeps it across
+candidates (Step 0.3): every candidate's reads land in the same run.
+Before any full-file read:
 
 1. Find the file's `size` in a `lfx_one_github_git_get_tree` listing of
    its directory at the same ref. Reuse a listing this run already read.
+   Do not read an entry with `mode` `120000`: it is a symlink, its `size`
+   is the length of the link text, and the contents API returns the
+   target's contents instead. Record it as unread with reason `symlink`.
 2. Read the file only if `size <= max_file_bytes` and `bytes_read + size
    <= max_run_bytes` (for a Step 3.2 read, `bytes_read + size <=
    220,000`). Then add `size` to `bytes_read`. Read it with
@@ -250,7 +255,7 @@ Every unread file has a kind and a reason. Step 6 lists them all.
 | `context` | A file wanted only for context | Skipped; no effect on the verdict |
 
 Reasons: `over the 100,000-byte limit`, `over the run total`, `size
-unknown`, `read failed`. A file the PR deletes is never
+unknown`, `read failed`, `symlink`. A file the PR deletes is never
 `changed-no-patch`: there is nothing new in it to review. The recap
 names it as `deleted`.
 
@@ -376,7 +381,8 @@ search every hour.
    and report the failure in Step 7.
 3. Take the first candidate. Set `owner`, `repo` and `number` from it and
    run Step 1 onward. Start each candidate fresh: carry nothing from an
-   earlier one except `event_time` and `repos`.
+   earlier one except `event_time`, `repos` and `bytes_read` (see "Read
+   budget").
 4. If the candidate stops at Step 1, a gate in Step 1.5, or Step 3, apply
    the "Pending label" rule for that stop, post nothing (except the
    stalled and too-large notices from Step 1.5), and take the next
@@ -386,7 +392,8 @@ search every hour.
 
 A sweep follows every later step as written, with these differences: it
 never posts a cap, debounce or skip notice (it may post the stalled and
-too-large notices), and it skips the duplicate notice check (Step 1.5);
+too-large notices), and it runs the duplicate notice check only for a
+too-large notice (Step 1.5);
 Step 3 uses its own rules; and the start comment says the hourly check
 started the review (Step 3.5). Two runs on one pull
 request, such as a sweep and a push, are settled by the Step 3.5 ownership
@@ -603,7 +610,8 @@ say so up front instead.
 - Otherwise post one conversation comment via
   `lfx_one_github_issues_create_comment`, run the duplicate notice check
   (below), and stop. Do not post a start comment. A sweep posts this
-  notice too, but skips the duplicate notice check.
+  notice too, and runs the duplicate notice check for it like a webhook
+  run, since a push can post the same notice at the same moment.
 
   ```text
   <!-- lfx-review-agent:too-large -->
@@ -824,11 +832,15 @@ From that filtered list:
     review was started and never finished (the run crashed, hung, or
     could not submit). Proceed to Step 3.2 as an **initial review**. This
     recovers a first review that the `opened` run lost.
+  - If there is also no dismissed or partial own review, **and** the PR
+    has an own `too-large-notice` → gate A1 declined an earlier run, and
+    this run passed it, so the PR now fits. Proceed to Step 3.2 as an
+    **initial review**, as the notice promised.
   - If there is also no dismissed or partial own review and there is
-    neither an abandoned start nor an `abandoned` comment → stop. There is
-    nothing to follow up on; this PR is still waiting on its first review,
-    which only the `opened` or `ready_for_review` event or a `re-review`
-    comment initiates. (If `opened` never fired, the author can comment
+    no abandoned start, `abandoned` comment or `too-large-notice` → stop.
+    There is nothing to follow up on; this PR is still waiting on its
+    first review, which only the `opened` or `ready_for_review` event or
+    a `re-review` comment initiates. (If `opened` never fired, the author can comment
     `@lfx-one re-review`, or convert the PR to a draft and mark it ready
     again, which fires `ready_for_review`.)
   - If there *is* a dismissed or partial own review: this is a follow-up,
@@ -1557,12 +1569,17 @@ approval until the file leaves the diff or a human approves.
 
 If any file counts and the verdict is `APPROVE`, withhold approval:
 submit the `COMMENT` event in 5c with the approval-withheld marker
-instead of `APPROVE`. Whenever any file counts, whatever the verdict, add
+instead of `APPROVE`. If any file counts and there is a live own
+approval (as the Step 1.5 approval guard defines it), submit
+`REQUEST_CHANGES` instead, whatever 5a.1 and 5a.2 decided: a `COMMENT`
+review does not replace an approval on GitHub, so in a repository that
+keeps stale approvals the unread file could merge on the earlier one.
+Whenever any file counts, whatever the verdict, add
 this note to the review body and the Step 6 Decision, with each path in a
 code span:
 
 ```text
-I couldn't read these changed files in full, so I can't approve this pull request: <paths>. GitHub doesn't show their diffs, and they don't fit within the review agent's read limit. A maintainer needs to review them before merge.
+I couldn't read these changed files in full, so I can't approve this pull request: <paths>. GitHub doesn't show their diffs, and I couldn't read them within the review agent's read limits. A maintainer needs to review them before merge.
 ```
 
 A `REQUEST_CHANGES` verdict stands. An approval that 5a.1 or 5a.2
@@ -1659,7 +1676,9 @@ notice with its identity check), and treat the PR as excluded instead of
 stopping at item 4. If `base.ref` changed and the PR is not excluded, run
 5a.2 again with the new `base.ref` in place of `base_ref`, since the new
 target branch can require other checks, and use its result for the
-verdict, the review body, and the Step 6 recap.
+verdict, the review body, and the Step 6 recap. Whenever this reran the
+Step 3.2 check, run 5a.3 again on the new file list as well, and use its
+result the same way.
 
 If the PR is excluded, do not submit a review, and skip Step 6. Replace
 this run's session comment body with
@@ -1687,7 +1706,8 @@ Call `lfx_one_github_pulls_create_review` once, with:
 
 - `event`: the verdict from 5a (`APPROVE` or `REQUEST_CHANGES`; `COMMENT`
   only when 5a.1, 5a.2 or 5a.3 withheld approval or `head_moved` blocked
-  an approval).
+  an approval). 5a.3 also turns the event into `REQUEST_CHANGES` when it
+  found unread files and there is a live own approval.
 - `commit_id`: `head_sha`, the SHA actually reviewed.
 - `body`: always starts with `<!-- lfx-review-agent:review -->` on the
   first line; Step 2 of later runs counts only reviews that carry it. On
@@ -1821,7 +1841,9 @@ the top short: some readers stop there.
      - ⚠️ **Review passed, required check failed** (only when 5a.2
        withheld approval and 5a.1 did not)
      - ⚠️ **Review passed, changed files not read** (only when 5a.3
-       withheld approval and neither 5a.1 nor 5a.2 did)
+       withheld approval and neither 5a.1 nor 5a.2 did, including when it
+       submitted `REQUEST_CHANGES` to replace an earlier approval; then
+       say that the earlier approval no longer counts)
      - ⏸️ **Not approved, new commits pushed during review** (only when
        5c found `head_moved` and the verdict was not `REQUEST_CHANGES`)
      - 🔴 **Needs changes before approval**
@@ -1924,11 +1946,11 @@ the top short: some readers stop there.
       ```
 
       Give each file's reason: `over the 100,000-byte limit`, `over the
-      run total`, `size unknown` or `read failed`, or `generated or lockfile, not
-      reviewed line by line` for a file in "Generated files and
-      lockfiles". For a `context` or `changed-with-patch` file, whose
-      patch (if any) was still reviewed, write `context` and a comma
-      before the reason, as in the example.
+      run total`, `size unknown`, `read failed` or `symlink`, or
+      `generated or lockfile, not reviewed line by line` for a file in
+      "Generated files and lockfiles". For a `context` or
+      `changed-with-patch` file, whose patch (if any) was still reviewed,
+      write `context` and a comma before the reason, as in the example.
       Name a large file the PR deletes as `deleted`. Omit this item when
       every file was read.
    8. **Rule files**: always the last line of Details, on every review,

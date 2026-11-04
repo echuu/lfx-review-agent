@@ -246,7 +246,7 @@ step 5 (tool output and tokens on a large follow-up).
 - [x] T029 Run `markdownlint` from the repository root on every changed
   `.md` file. Re-read the `PROMPT.md` diff for unslop rules and for `{{ }}`
   text other than `{{env.KEY}}`.
-- [ ] T030 Open the PR from `feature/context-overflow` (label
+- [x] T030 Open the PR from `feature/context-overflow` (label
   `ai-assisted`, assignee `dealako`, body ends with the Claude Code line).
   Confirm Agent Version Check, License Header and DCO pass.
 - [ ] T031 (maintainer) Publish integration 1.0.6 from this branch's spec

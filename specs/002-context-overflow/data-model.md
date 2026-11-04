@@ -31,7 +31,7 @@ Fixed values in `PROMPT.md`, tuned by maintainers (research R7, R8).
 | --- | --- |
 | `path` | Repository path |
 | `kind` | `changed-no-patch` (changed file whose patch GitHub omitted), `changed-with-patch` (patch reviewed, whole file not read), `context` (wanted for context only) |
-| `reason` | `over the 100,000-byte limit`, `over the 300,000-byte run total`, `size unknown` |
+| `reason` | `over the 100,000-byte limit`, `over the run total`, `size unknown`, `read failed`, `symlink` |
 | `generated` | true when the path matches the generated-file and lockfile table |
 | `withholds` | true only for `changed-no-patch` with `generated` false |
 

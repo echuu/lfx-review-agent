@@ -8,6 +8,8 @@ FR-008, FR-013, FR-014; research R7, R9, R10). Field names are in
 
 1. Get the file's `size` from a `git_get_tree` listing of its directory
    at the same ref. Reuse a listing already read in this run.
+   Never read a mode `120000` entry (a symlink): record it as unread
+   with reason `symlink`.
 2. Read the file only if `size <= max_file_bytes` and
    `bytes_read + size <= max_run_bytes`. Then add `size` to `bytes_read`.
 3. Otherwise record an unread file and go on with the review.
@@ -36,12 +38,15 @@ Decide from the path alone:
 
 ## Verdict (new Step 5a.3)
 
-Run after 5a.2 when the verdict would be `APPROVE`. If any unread file
-has `withholds` true, submit `COMMENT` with the approval-withheld marker
-and this note in the review body and the Step 6 summary:
+Run after 5a.2, for every verdict, on the whole-PR file list. If any
+unread file has `withholds` true and the verdict is `APPROVE`, submit
+`COMMENT` with the approval-withheld marker. If there is also a live own
+approval, submit `REQUEST_CHANGES` instead, so the earlier approval no
+longer counts. Whenever a file counts, add this note to the review body
+and the Step 6 Decision:
 
 ```text
-I couldn't read these changed files in full, so I can't approve this pull request: <paths>. GitHub doesn't show their diffs, and each is over the review agent's read limit. A maintainer needs to review them before merge.
+I couldn't read these changed files in full, so I can't approve this pull request: <paths>. GitHub doesn't show their diffs, and I couldn't read them within the review agent's read limits. A maintainer needs to review them before merge.
 ```
 
 A `REQUEST_CHANGES` verdict stands; the summary still names the files.

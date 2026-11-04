@@ -53,8 +53,9 @@ every field any step reads:
 - Reviews: `id`, `state`, `body`, `html_url`, `user.login`, `commit_id`,
   `submitted_at`.
 - Inline review comments: `id`, `pull_request_review_id`,
-  `in_reply_to_id`, `user.login`, `body`, `path`, `line`, `original_line`,
-  `side`, `commit_id`, `html_url`, `created_at`, `updated_at`.
+  `in_reply_to_id`, `user.login`, `body`, `path`, `line`, `start_line`,
+  `original_line`, `side`, `commit_id`, `html_url`, `created_at`,
+  `updated_at`.
 
 The implementation re-checks these lists against every use in
 `PROMPT.md` before publishing.
