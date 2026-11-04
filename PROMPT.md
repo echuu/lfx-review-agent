@@ -550,7 +550,8 @@ Parse every session marker (`session-start` and `session-summary`):
 
 Before a webhook run stops at gate B or C, apply the "Pending label" rule.
 On a `sweep`, a gate that would post a cap or debounce notice stops
-silently instead, and the duplicate notice check does not run. A sweep
+silently instead, and the duplicate notice check does not run, except
+for the too-large notice from gate A1. A sweep
 also stops, before gate A0, when the PR has 2 or more own `abandoned`
 comments and `abandoned_starts` in total that are newer than its most
 recent `session-summary` (or with no summary): its reviews keep dying, so
@@ -1842,8 +1843,7 @@ the top short: some readers stop there.
        withheld approval and 5a.1 did not)
      - ⚠️ **Review passed, changed files not read** (only when 5a.3
        withheld approval and neither 5a.1 nor 5a.2 did, including when it
-       submitted `REQUEST_CHANGES` to replace an earlier approval; then
-       say that the earlier approval no longer counts)
+       submitted `REQUEST_CHANGES` to replace an earlier approval)
      - ⏸️ **Not approved, new commits pushed during review** (only when
        5c found `head_moved` and the verdict was not `REQUEST_CHANGES`)
      - 🔴 **Needs changes before approval**
@@ -1867,7 +1867,9 @@ the top short: some readers stop there.
    - When 5a.1 withheld approval, the 5a.1 note. When 5a.2 withheld it,
      the 5a.2 note. When 5a.3 found unread changed files, the 5a.3 note,
      whatever the decision, so the files are named near the top of the
-     summary.
+     summary. When 5a.3 submitted `REQUEST_CHANGES` to replace a live own
+     approval, add one sentence saying the earlier approval no longer
+     counts, whatever the decision label.
    - When 5a.2 found a failed check, whatever the decision, one line
      naming each failed check and whether it is required, then asking for
      a fix before merge, for example ``Failed checks: `DCO` (required),
