@@ -50,42 +50,42 @@ go into any of them.
 
 Integration 1.0.6 and the shared prompt sections.
 
-- [ ] T003 Add operation `git_get_tree` to
+- [x] T003 Add operation `git_get_tree` to
   `integration/lfx-one-github.openapi.yaml`: `GET
   /repos/{owner}/{repo}/git/trees/{tree_sha}`, parameters `owner`,
   `repo` and `tree_sha` (path, string; described as `<commit>:<directory>`
   or a commit SHA for the root), response `Ok`. No `recursive` parameter
   ([contracts/integration-ops.md](contracts/integration-ops.md)).
-- [ ] T004 Add an optional header parameter `Accept` (`in: header`,
+- [x] T004 Add an optional header parameter `Accept` (`in: header`,
   `required: false`, `schema: { type: string, enum:
   ["application/vnd.github.raw+json"] }`) to `repos_get_content` in
   `integration/lfx-one-github.openapi.yaml`. Update its summary to say
   the header returns the file's text. No new operation: OpenAPI allows one
   GET per path (research R4).
-- [ ] T005 Change `issues_remove_label` in
+- [x] T005 Change `issues_remove_label` in
   `integration/lfx-one-github.openapi.yaml` to the path
   `/repos/{owner}/{repo}/issues/{issue_number}/labels/lfx-review-agent-pending`
   and remove the `name` parameter. Keep the operation id, summary and
   responses (200 `OkList`, 404 `Ok`) (research R12).
-- [ ] T006 Add output schemas to `pulls_list_reviews` and
+- [x] T006 Add output schemas to `pulls_list_reviews` and
   `pulls_list_review_comments` in
   `integration/lfx-one-github.openapi.yaml` with exactly the fields in
   [contracts/integration-ops.md](contracts/integration-ops.md),
   "Narrowed output schemas". Before writing them, grep `PROMPT.md` for
   every field read from these two responses and add any the contract
   misses.
-- [ ] T007 Update the header comment in
+- [x] T007 Update the header comment in
   `integration/lfx-one-github.openapi.yaml` (operation count and what was
   added) and set `info.version` to `1.0.6`.
-- [ ] T008 [P] In `guild.yaml`, pin the integration to 1.0.6 and add the
+- [x] T008 [P] In `guild.yaml`, pin the integration to 1.0.6 and add the
   tool `lfx_one_github_git_get_tree`.
-- [ ] T009 In `PROMPT.md` "Tools", add rows for `git_get_tree` ("A
+- [x] T009 In `PROMPT.md` "Tools", add rows for `git_get_tree` ("A
   directory's entries at a commit: `path`, `type`, `mode`, `size`, `sha`;
   `tree_sha` is `<commit>:<directory>`, or the commit SHA for the root"),
   change the file-content row to show the `Accept` header, and change the
   remove-label row to drop `name`.
   Add one sentence: never call `repos_get_content` on a directory.
-- [ ] T010 In `PROMPT.md`, add a section "Read budget" after "Pending
+- [x] T010 In `PROMPT.md`, add a section "Read budget" after "Pending
   label", from [contracts/read-budget.md](contracts/read-budget.md) and
   [data-model.md](data-model.md): the limits table with the values
   verbatim (`max_file_bytes` 100,000; `max_run_bytes` 300,000; rule-file
@@ -98,7 +98,7 @@ Integration 1.0.6 and the shared prompt sections.
   left. A file read in Step 3.2 is reused in Step 4 and counted once. A
   failed tree listing means `size unknown`, which withholds approval for
   a patch-less changed file.
-- [ ] T011 In `PROMPT.md`, add a section "Generated files and lockfiles"
+- [x] T011 In `PROMPT.md`, add a section "Generated files and lockfiles"
   after "Review exclusions", with the research R9 table verbatim and the
   rule: a listed file that is not read is named "generated or lockfile,
   not reviewed line by line" and never withholds approval. Say that
