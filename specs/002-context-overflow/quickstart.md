@@ -43,9 +43,12 @@ Create the ALLOW policy first. Run with `--account linux-foundation`.
   that carries the pending label and one other label: expect 200 and only
   the pending label gone, then 404 on a second call. Confirm the
   existing ALLOW policy still allows it (no policy denial).
-- `pulls_list_reviews` on #4962: record whether the response shrank to the
-  narrowed schema (research R6). Send the result to Guild with the
-  question either way.
+- `pulls_list_reviews` and `pulls_list_review_comments` on #4962, which
+  has outdated comments (`line: null`): expect 200 for both. A Guild
+  validation error means the narrowed schema broke the read; fix it
+  before merging. Record whether each response shrank to the narrowed
+  schema (research R6), and send the result to Guild with the question
+  either way.
 
 ## 3. Rollout order
 

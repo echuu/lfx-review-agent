@@ -28,8 +28,13 @@ separate operation.
 
 Both operations keep their ids and tool names, so the ALLOW policies
 that name them should still apply; quickstart step 2 checks that. The
-prompt stops passing `name` to `issues_remove_label`. Agent 0.1.18 pins
-1.0.5, so publishing 1.0.6 does not change it.
+prompt stops passing `name` to `issues_remove_label`. The live agent
+(0.1.19) pins 1.0.5, so publishing 1.0.6 does not change it.
+
+OpenAPI 3.0.3 ignores a header parameter named `Accept`, so the
+`repos_get_content` 200 response also lists the
+`application/vnd.github.raw+json` media type next to `application/json`.
+The narrowed history schemas mark nullable fields `nullable: true`.
 
 ## No GraphQL operation
 

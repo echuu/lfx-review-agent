@@ -99,10 +99,13 @@ Checked against GitHub directly:
 `application/vnd.github.raw+json`. OpenAPI allows one GET per path, so a
 separate raw operation on the same path is not possible. The enum is not
 enforced (R5), but any `Accept` value on this GET is still a read.
-Whether Guild sends header parameters is unknown, so quickstart step 2
-tests it after publish. If Guild drops the header, the read returns the
-JSON form and the prompt stops passing it. GraphQL `Blob.text` is ruled
-out (R5).
+OpenAPI 3.0.3 says a header parameter named `Accept` is ignored, so the
+200 response also declares the `application/vnd.github.raw+json` media
+type; Guild may choose the `Accept` value from either. Whether it sends
+the raw type at all is unknown, so quickstart step 2 tests it after
+publish, before the PR merges. If it doesn't, the read returns the JSON
+form, and the prompt's header sentence in "Read budget" is removed before
+merge. GraphQL `Blob.text` is ruled out (R5).
 
 **Alternatives**: GraphQL `Blob.text` first (gated on R5);
 `raw.githubusercontent.com` (another host, and private repositories need
@@ -155,6 +158,10 @@ The thread query also gives resolution status, which #19 asks for.
 
 Other options:
 
+- The narrowed schemas mark the fields GitHub can return as `null`
+  `nullable` (an outdated comment's `line`, a top-level comment's
+  `in_reply_to_id`, a deleted account's `user`), so a Guild that validates
+  responses against the schema does not reject them.
 - Guild may trim a response to the operation's output schema
   (`guild integration operation create` takes `--output-body-schema`).
   Unknown; a question for Guild (Rod Brathwaite). Narrowing the output
@@ -183,6 +190,11 @@ add them up before reading.
 | Per file, full read | 100,000 bytes | 51 of 3,726 file reads in successful reviews returned more than 140 KB (a file of about 100 KB). #4989, #449, #472 and #3177 each read 600 KB to 1.3 MB. |
 | Per run, all full-file reads | 300,000 bytes | #4989 failed at 593 KB plus 215 KB of base64, and succeeded at 600 KB alone. |
 | Patch-less changed file | Read at head only | Reading both commits doubled #449 and #3177. The base side adds little: the model cannot diff two large copies well. |
+
+Known gap: `git_get_tree` listings do not count toward `bytes_read`. A
+listing is far smaller than the contents listing it replaces (78 KB for
+316 entries), but a run that lists many large directories for context
+still adds up. Quickstart step 5 watches for it.
 
 These values assume base64 reads. When plain-text reads are confirmed
 (R4), the limits can rise; quickstart step 5 gives the numbers. Rule

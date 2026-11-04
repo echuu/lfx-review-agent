@@ -253,8 +253,10 @@ step 5 (tool output and tokens on a large follow-up).
   (quickstart section 3) and check the published version lists every
   operation.
 - [ ] T032 (maintainer) Create the ALLOW policy for `git_get_tree`.
-- [ ] T033 (maintainer) Run quickstart step 2. If the header read returns
-  JSON, revert T024 (stop passing the header) before merging. Record results
+- [ ] T033 (maintainer) Run quickstart step 2 before merging. If the
+  header read returns JSON, revert T024 (stop passing the header). If
+  either history read fails Guild validation, fix the schema. Do not
+  merge until this step passes. Record results
   in research R4, R6 and R12.
 - [ ] T034 (maintainer) Merge the PR, then run `guild agent save
   --publish --version-number 0.1.20 -m "..."` from an updated `main`.

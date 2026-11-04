@@ -92,12 +92,13 @@ components:
               properties:
                 id: { type: integer }
                 state: { type: string }
-                body: { type: string }
+                body: { type: string, nullable: true }
                 html_url: { type: string }
-                commit_id: { type: string }
-                submitted_at: { type: string }
+                commit_id: { type: string, nullable: true }
+                submitted_at: { type: string, nullable: true }
                 user:
                   type: object
+                  nullable: true
                   properties:
                     login: { type: string }
     ReviewCommentList:
@@ -112,30 +113,23 @@ components:
               type: object
               properties:
                 id: { type: integer }
-                pull_request_review_id: { type: integer }
-                in_reply_to_id: { type: integer }
+                pull_request_review_id: { type: integer, nullable: true }
+                in_reply_to_id: { type: integer, nullable: true }
                 body: { type: string }
                 path: { type: string }
-                line: { type: integer }
-                start_line: { type: integer }
-                original_line: { type: integer }
-                side: { type: string }
+                line: { type: integer, nullable: true }
+                start_line: { type: integer, nullable: true }
+                original_line: { type: integer, nullable: true }
+                side: { type: string, nullable: true }
                 commit_id: { type: string }
                 html_url: { type: string }
                 created_at: { type: string }
                 updated_at: { type: string }
                 user:
                   type: object
+                  nullable: true
                   properties:
                     login: { type: string }
-    OkObjectOrList:
-      description: Successful response, an object (file) or an array (directory)
-      content:
-        application/json:
-          schema:
-            oneOf:
-              - { type: object }
-              - { type: array, items: { type: object } }
 
 paths:
   /repos/{owner}/{repo}/pulls/{pull_number}:
@@ -323,12 +317,23 @@ paths:
         - name: ref
           in: query
           schema: { type: string }
+        # OpenAPI 3.0 says a header parameter named Accept is ignored, so
+        # the raw media type is also declared on the 200 response below.
+        # Which one Guild honors is checked before merge (quickstart step 2).
         - name: Accept
           in: header
           required: false
           schema: { type: string, enum: ["application/vnd.github.raw+json"] }
       responses:
-        "200": { $ref: "#/components/responses/OkObjectOrList" }
+        "200":
+          description: >-
+            A file as JSON with base64 content, or as its text with the raw
+            media type.
+          content:
+            application/json:
+              schema: { type: object }
+            application/vnd.github.raw+json:
+              schema: { type: string }
   /repos/{owner}/{repo}/git/trees/{tree_sha}:
     get:
       operationId: git_get_tree
