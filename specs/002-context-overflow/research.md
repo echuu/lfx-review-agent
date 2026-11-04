@@ -276,6 +276,12 @@ looks at it either way.
   for `git_get_tree`.
 - Publish order as before: integration, policy, merge, `guild agent
   save --publish --version-number 0.1.20`.
+- Outcome (2026-11-04): 1.0.6 was built and published before Guild
+  finished generating its operations in the background, so it has 18 of
+  21 (no `search_issues`, `users_get_by_username` or
+  `issues_remove_label`). A published version can't be removed, so 1.0.6
+  must never be pinned. 1.0.7 is the same spec, published after the draft
+  listed all 21. Agent 0.1.20 was never published; 0.1.21 pins 1.0.7.
 
 ## R12. The existing pins are not enforced
 

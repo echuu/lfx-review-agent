@@ -54,14 +54,17 @@ Create the ALLOW policy first. Run with `--account linux-foundation`.
 
 1. Step 1 above, recorded.
 2. From this branch's `integration/lfx-one-github.openapi.yaml`, publish
-   1.0.6: `guild integration version create`, `operation create
-   --openapi`, `version build`, `version publish`. Check that the
-   published version lists every operation (20 plus the new ones). A
-   published version can't be removed.
+   the new version: `guild integration version create`, `operation create
+   --openapi`, then wait until `guild integration operation list` (the
+   newest draft) shows all 21 operations, and only then `version build`
+   and `version publish`. `operation create` runs in the background:
+   building early published 1.0.6 with 18 operations, and a published
+   version can't be removed. 1.0.7 is the version to pin.
 3. Create the ALLOW policy for `git_get_tree`.
 4. Step 2 above.
-5. Merge, then `guild agent save --publish --version-number 0.1.20 -m
-   "..."` from an updated `main`.
+5. Merge, then `guild agent save --publish --version-number 0.1.21 -m
+   "..."` from an updated `main` (0.1.20 pinned the broken 1.0.6 and was
+   never published).
 
 ## 4. Validation scenarios
 

@@ -6,7 +6,9 @@
 # it first used from `guildai~github`, a reaction, four reads for CI
 # checks and required checks, three for the hourly sweep (an issue
 # search, and adding and removing the one pending label), and a git tree
-# read for file sizes before reads (1.0.6). The credential is a
+# read for file sizes before reads (1.0.6). 1.0.6 was published before
+# Guild finished generating its operations and lacks three of them, so it
+# must never be pinned; 1.0.7 is the same spec. The credential is a
 # fine-grained token owned by `lfx-one`, connected with
 # `guild integration connect`. Never put the token in this file.
 #
@@ -20,7 +22,7 @@
 openapi: 3.0.3
 info:
   title: LFX One GitHub
-  version: 1.0.6
+  version: 1.0.7
   description: GitHub REST operations the LFX review agent performs as lfx-one.
 servers:
   - url: https://api.github.com
