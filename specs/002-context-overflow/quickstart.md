@@ -26,7 +26,7 @@ guild integration version test linux-foundation~lfx-one-github \
 | A Guild validation error before any request (names the `enum`) | Guild enforces body enums. `graphql_read` goes into 1.0.6. |
 | HTTP 422 from GitHub ("Validation Failed") | Guild passes values through. No `graphql_read`; R6 waits for a read-only token (#19). |
 
-## 2. Test the new operations (after integration 1.0.6 is published)
+## 2. Test the new operations (after integration 1.0.7 is published)
 
 Create the ALLOW policy first. Run with `--account linux-foundation`.
 
@@ -34,11 +34,9 @@ Create the ALLOW policy first. Run with `--account linux-foundation`.
   `<a lfx-self-serve commit SHA>:packages/shared/src/utils`: expect 200,
   `tree` entries with `size`, and a response near 78 KB. Repeat with the
   commit SHA alone for the root.
-- `repos_get_content` with `Accept: application/vnd.github.raw+json` on
-  `AGENTS.md` in `lfx-self-serve` at that commit: expect plain Markdown
-  (about 22 KB), not JSON with base64. If it returns JSON, Guild dropped
-  the header: remove the header from the prompt before merging (plan,
-  Rollout step 3).
+- `repos_get_content` with a raw `Accept` header can't be tested here:
+  Guild operations take no header inputs, so it always returns JSON with
+  base64 content (research R4 outcome).
 - `issues_remove_label` on a test PR in `linuxfoundation/lfx-review-agent`
   that carries the pending label and one other label: expect 200 and only
   the pending label gone, then 404 on a second call. Confirm the
@@ -84,7 +82,7 @@ Create the ALLOW policy first. Run with `--account linux-foundation`.
 
 Repeat the R1 scan (per-session tool output from `guild session events
 --events all`, token totals from `guild session get`) on the first 200
-reviews under 0.1.20:
+reviews under 0.1.22 (0.1.21 also counts; 0.1.20 was never published):
 
 - No `prompt is too long` errors without a notice (SC-001).
 - No PR declined by gate A1 that a 0.1.17 run reviewed (SC-003).

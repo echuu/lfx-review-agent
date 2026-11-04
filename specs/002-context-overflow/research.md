@@ -107,6 +107,15 @@ publish, before the PR merges. If it doesn't, the read returns the JSON
 form, and the prompt's header sentence in "Read budget" is removed before
 merge. GraphQL `Blob.text` is ruled out (R5).
 
+**Outcome** (2026-11-04, first 0.1.21 sessions): Guild generates no header
+inputs for an operation. Integration 1.0.7's `repos_get_content` has only
+path (`owner`, `repo`, `path`) and query (`ref`) inputs, so the `Accept`
+parameter is dropped and the 200 response's raw media type is never
+requested. File reads still return JSON with base64 content (AGENTS.md:
+31,595 bytes, as before). 0.1.22 removes the raw-text sentence from the
+prompt. The read limits in R7 already assume base64, so they stand.
+Plain-text reads need another route; a question for Guild.
+
 **Alternatives**: GraphQL `Blob.text` first (gated on R5);
 `raw.githubusercontent.com` (another host, and private repositories need
 the token there too).

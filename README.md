@@ -475,8 +475,7 @@ Run these on a throwaway PR before enabling triggers on a real repository.
     marker instead of an approval.
 25. Read budget: in the session events of a review, confirm directories
     are listed with `git_get_tree` (no `repos_get_content` call on a
-    directory), file reads pass the raw `Accept` header and return text,
-    and no full-file read exceeds 100,000 bytes.
+    directory), and no full-file read exceeds 100,000 bytes.
 
 ## Ideas
 
