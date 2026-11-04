@@ -233,16 +233,17 @@ step 5 (tool output and tokens on a large follow-up).
 
 ## Phase 6: Polish, docs and rollout
 
-- [ ] T026 [P] Update `README.md`: credential policy (the full ALLOW
+- [x] T026 [P] Update `README.md`: credential policy (the full ALLOW
   list gains `git_get_tree`; a new `policy create` example for it; note
   that `issues_remove_label` now removes only the pending label), and test
   checklist items for
   quickstart section 4.
-- [ ] T027 [P] Update `CLAUDE.md`: add `:too-large` to the read-back
+- [x] T027 [P] Update `CLAUDE.md`: add `:too-large` to the read-back
   markers, and next to the review-exclusions note, say how to extend the
   generated-file and lockfile table.
-- [ ] T028 Bump "Agent version" in `PROMPT.md` to `0.1.19`.
-- [ ] T029 Run `markdownlint` from the repository root on every changed
+- [x] T028 Bump "Agent version" in `PROMPT.md` to `0.1.20` (main took
+  0.1.19 for PR #36).
+- [x] T029 Run `markdownlint` from the repository root on every changed
   `.md` file. Re-read the `PROMPT.md` diff for unslop rules and for `{{ }}`
   text other than `{{env.KEY}}`.
 - [ ] T030 Open the PR from `feature/context-overflow` (label
@@ -256,10 +257,10 @@ step 5 (tool output and tokens on a large follow-up).
   JSON, revert T024 (stop passing the header) before merging. Record results
   in research R4, R6 and R12.
 - [ ] T034 (maintainer) Merge the PR, then run `guild agent save
-  --publish --version-number 0.1.19 -m "..."` from an updated `main`.
-- [ ] T035 Run quickstart step 5 on the first 200 reviews under 0.1.19,
+  --publish --version-number 0.1.20 -m "..."` from an updated `main`.
+- [ ] T035 Run quickstart step 5 on the first 200 reviews under 0.1.20,
   record the results in research R7, and update the memory file with the
-  live state (agent 0.1.19, integration 1.0.6). Compare one follow-up's
+  live state (agent 0.1.20, integration 1.0.6). Compare one follow-up's
   prior-feedback and bot reconciliation on the same PR before and after
   1.0.6 (spec US3 scenario 3). Time one too-large notice against its
   event (SC-002). If T002 confirms trimming, raise
@@ -312,8 +313,8 @@ needs `git_get_tree`, so it ships with integration 1.0.6.
 1. Phases 1 and 2, then US2.
 2. US1 (gate A1).
 3. US3, confirmed by quickstart step 2 before merge.
-4. Polish and rollout: one PR, one agent version (0.1.19), one
+4. Polish and rollout: one PR, one agent version (0.1.20), one
    integration version (1.0.6).
 
 All of it ships in one PR, since the version check counts one bump per
-PR and `too-large` becomes a released marker at 0.1.19.
+PR and `too-large` becomes a released marker at 0.1.20.

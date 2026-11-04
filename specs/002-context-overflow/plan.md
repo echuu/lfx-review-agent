@@ -73,7 +73,7 @@ repository's `CLAUDE.md` rules serve as the gates.
 | Gate | Status |
 | --- | --- |
 | Released markers unchanged. New: `too-large` marker and comment class; `superseded notice=too-large`. | Pass (additive) |
-| `PROMPT.md` and `guild.yaml` change, so the agent version goes to 0.1.19. | Planned |
+| `PROMPT.md` and `guild.yaml` change, so the agent version goes to 0.1.20. | Planned |
 | Every new tool is in `guild.yaml`, the prompt's Tools table and the README credential policy. | Planned |
 | The integration is published before `guild.yaml` pins it, and the policy exists before the save. | Planned (rollout) |
 | The maintainer runs every Guild command that uses the credential. | Planned (quickstart steps 1, 2, 5) |
@@ -190,7 +190,7 @@ feature touches the existing files above and adds no script.
    step 2 (tree, raw header, history schemas). If Guild drops the
    `Accept` header, change the prompt to keep `repos_get_content` before
    merging.
-4. Merge, then `guild agent save --publish --version-number 0.1.19`.
+4. Merge, then `guild agent save --publish --version-number 0.1.20`.
 5. Measure (quickstart step 5) and tune the read limits in a patch
    release if plain text holds.
 

@@ -57,7 +57,7 @@ Create the ALLOW policy first. Run with `--account linux-foundation`.
    published version can't be removed.
 3. Create the ALLOW policy for `git_get_tree`.
 4. Step 2 above.
-5. Merge, then `guild agent save --publish --version-number 0.1.19 -m
+5. Merge, then `guild agent save --publish --version-number 0.1.20 -m
    "..."` from an updated `main`.
 
 ## 4. Validation scenarios
@@ -77,7 +77,7 @@ Create the ALLOW policy first. Run with `--account linux-foundation`.
 
 Repeat the R1 scan (per-session tool output from `guild session events
 --events all`, token totals from `guild session get`) on the first 200
-reviews under 0.1.19:
+reviews under 0.1.20:
 
 - No `prompt is too long` errors without a notice (SC-001).
 - No PR declined by gate A1 that a 0.1.17 run reviewed (SC-003).

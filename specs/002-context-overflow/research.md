@@ -170,7 +170,7 @@ history operations in 1.0.6 and ask Guild whether it trims to them. If
 it does, the history reads shrink without GraphQL. If it doesn't,
 history stays as large as today, and the Phase A tail read and gate A1's
 `review_comments` limit (R8) are the only protection; SC-004 is then not
-met in 0.1.19. The REST `since` read is rejected: it loses history the
+met in 0.1.20. The REST `since` read is rejected: it loses history the
 reconciliation needs.
 
 ## R7. Read limits
@@ -256,14 +256,14 @@ looks at it either way.
 
 ## R11. Versions and rollout
 
-- Agent 0.1.19: all prompt changes (Phase B, plus Phase C prompt use of
+- Agent 0.1.20: all prompt changes (Phase B, plus Phase C prompt use of
   whatever 1.0.6 confirms).
 - Integration 1.0.6: `git_get_tree`; an optional `Accept` header on
   `repos_get_content`; narrowed output schemas on the two history
   operations; the path-pinned label remove (R12). One new ALLOW policy,
   for `git_get_tree`.
 - Publish order as before: integration, policy, merge, `guild agent
-  save --publish --version-number 0.1.19`.
+  save --publish --version-number 0.1.20`.
 
 ## R12. The existing pins are not enforced
 

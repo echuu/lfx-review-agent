@@ -26,7 +26,7 @@ When over:
 
 ```text
 <!-- lfx-review-agent:too-large -->
-@<login> This pull request is too large for an automated review (<reason>), so I won't start one. A human review is needed. If the pull request gets smaller, the next push starts a review. For help with the review agent, see {{env.REVIEW_AGENT_HELP_URL}}.
+@<login> This pull request is too large for an automated review (<reason>), so I won't start one. A human review is needed. If the pull request gets smaller, the next push, or a comment that begins with a mention of me followed by `re-review`, starts a review. For help with the review agent, see {{env.REVIEW_AGENT_HELP_URL}}.
 ```
 
 `<reason>` names the first limit exceeded, for example `21,400 changed

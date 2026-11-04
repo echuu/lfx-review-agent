@@ -285,7 +285,7 @@ CRED=<credential-id>   # guild credentials list --owner linux-foundation
 
 guild credentials policy create "$CRED" \
   --decision ALLOW \
-  --operations pulls_get,pulls_list_files,pulls_list_commits,pulls_list_reviews,pulls_list_review_comments,pulls_create_review,issues_list_comments,issues_create_comment,issues_update_comment,issues_create_reaction,repos_compare_commits,repos_get_content,users_get_by_username,repos_get_branch,repos_get_branch_rules,checks_list_for_ref,repos_get_combined_status,search_issues,issues_add_labels,issues_remove_label \
+  --operations pulls_get,pulls_list_files,pulls_list_commits,pulls_list_reviews,pulls_list_review_comments,pulls_create_review,issues_list_comments,issues_create_comment,issues_update_comment,issues_create_reaction,repos_compare_commits,repos_get_content,git_get_tree,users_get_by_username,repos_get_branch,repos_get_branch_rules,checks_list_for_ref,repos_get_combined_status,search_issues,issues_add_labels,issues_remove_label \
   --workspaces <workspace-uuid> \
   --agents <agent-uuid>
 
@@ -295,8 +295,8 @@ guild credentials policy delete <allow-all-policy-id>
 
 There is no command to update a policy. To allow a new operation on an
 existing credential, create another `ALLOW` policy with only the new
-operations, for example the CI check reads added in 0.1.15 and the sweep
-operations added in 0.1.18:
+operations, for example the CI check reads added in 0.1.15, the sweep
+operations added in 0.1.18, and the tree read added in 0.1.20:
 
 ```bash
 guild credentials policy create "$CRED" \
@@ -310,7 +310,20 @@ guild credentials policy create "$CRED" \
   --operations search_issues,issues_add_labels,issues_remove_label \
   --workspaces <workspace-uuid> \
   --agents <agent-uuid>
+
+guild credentials policy create "$CRED" \
+  --decision ALLOW \
+  --operations git_get_tree \
+  --workspaces <workspace-uuid> \
+  --agents <agent-uuid>
 ```
+
+Guild does not enforce `enum` values in a request: an enum in the
+integration spec documents the intended value only. Since integration
+1.0.6, `issues_remove_label` has the label name in its path, so it can
+remove only `lfx-review-agent-pending`. `issues_add_labels` and
+`issues_create_reaction` still rely on the prompt to send the intended
+value.
 
 `--workspaces` takes a UUID or `<owner>~<name>`, not a bare workspace name.
 If the credential is deleted and reconnected, its policies are gone and this
@@ -449,6 +462,21 @@ Run these on a throwaway PR before enabling triggers on a real repository.
 22. Tail read: on a PR with more than 10 reviews, confirm the Step 5c
     `pulls_list_reviews` calls use `per_page: 10` from page
     `floor(review_count / 10) + 1`, not page 1.
+23. Too large: on a test PR over 20,000 changed lines, push a commit.
+    Confirm one `lfx-review-agent:too-large` notice, no start comment and
+    no review, and no second notice on the next push. Shrink the PR under
+    the limits and confirm the next push starts a review without a
+    debounce.
+24. Unread files: on a test PR that changes a lockfile without a patch
+    (for example `pnpm-lock.yaml`) and a non-generated file over 100,000
+    bytes without a patch, confirm the lockfile is named "generated or
+    lockfile, not reviewed line by line", the other file is named in the
+    Decision, and the review is a `COMMENT` with the approval-withheld
+    marker instead of an approval.
+25. Read budget: in the session events of a review, confirm directories
+    are listed with `git_get_tree` (no `repos_get_content` call on a
+    directory), file reads pass the raw `Accept` header and return text,
+    and no full-file read exceeds 100,000 bytes.
 
 ## Ideas
 
