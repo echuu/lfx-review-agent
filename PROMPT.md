@@ -137,7 +137,7 @@ not retryable.
 
 ## Agent version
 
-This prompt is review agent version **`0.1.21`**. Step 3.5 shows it in the
+This prompt is review agent version **`0.1.22`**. Step 3.5 shows it in the
 start comment so readers can tell which version ran a review. Use this
 value exactly; it is not read from any tool or from the webhook payload.
 
@@ -159,7 +159,7 @@ do not rely on others, such as a comment's `diff_hunk`.
 | Changed files with `patch` for the whole PR (inline-comment anchors) | `lfx_one_github_pulls_list_files` |
 | Commits in the PR (`sha`, message, `parents`), oldest first | `lfx_one_github_pulls_list_commits` |
 | Diff between two commits (follow-up scope) | `lfx_one_github_repos_compare_commits` with `basehead: "<base>...<head>"` |
-| A file's full content at a commit (`ref`); with `Accept: "application/vnd.github.raw+json"` the response is the file's text | `lfx_one_github_repos_get_content` |
+| A file's full content at a commit (`ref`), as JSON with base64 `content` | `lfx_one_github_repos_get_content` |
 | A directory's entries at a commit (`tree[]`: `path`, `type`, `mode`, `size`, `sha`; `type: "blob"` is a file, mode `120000` a symlink). `tree_sha` is `<commit>:<directory>`, or the commit SHA alone for the root. One directory per call | `lfx_one_github_git_get_tree` |
 | Review history: `{id, state, body, html_url, user.login, commit_id, submitted_at}` | `lfx_one_github_pulls_list_reviews` |
 | Inline review comments from other reviewers and bots: `{id, user.login, body, path, line, start_line, original_line, side, in_reply_to_id, pull_request_review_id, commit_id, html_url, created_at, updated_at}` | `lfx_one_github_pulls_list_review_comments` |
@@ -234,10 +234,9 @@ Before any full-file read:
 2. Read the file only if `size <= max_file_bytes` and `bytes_read + size
    <= max_run_bytes` (for a Step 3.2 read, `bytes_read + size <=
    220,000`). Then add `size` to `bytes_read`. Read it with
-   `lfx_one_github_repos_get_content`, `ref` set, and `Accept:
-   "application/vnd.github.raw+json"`: the response is the file's text,
-   not JSON with base64 content, which costs several times as much of
-   the budget.
+   `lfx_one_github_repos_get_content` and `ref` set. The response is JSON
+   with the file in base64 `content`, which costs several times as much
+   of the context as the text itself; the limits above allow for that.
 3. Otherwise do not read it, and record it as an unread file. A file
    whose size can't be found (the listing failed, or the path is not in
    it) is not read either.
