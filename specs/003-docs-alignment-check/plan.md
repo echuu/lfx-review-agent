@@ -1,6 +1,6 @@
 # Implementation Plan: Documentation alignment check
 
-**Branch**: `feature/docs-alignment-check` (not created yet) |
+**Branch**: `feature/docs-alignment-check` |
 **Date**: 2026-11-04 | **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from

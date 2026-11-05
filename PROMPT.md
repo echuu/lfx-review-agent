@@ -1177,7 +1177,9 @@ new one, and so a concurrent firing can see an in-progress session (Step
   `max_run_bytes` (see "Read budget"; rule files count toward it). Take
   sizes from the listings. After a skip, go on
   to the next file: a smaller one may still fit. A missing file or
-  directory is not an error. If a listing or read fails for any other
+  directory is not an error: a listing that returns 404 found no
+  directory, so it is not a failed listing and the recap does not name
+  it. If a listing or read fails for any other
   reason, skip it and continue the review; rule files never stop a run.
   The Step 6 recap reports every file read and every file skipped, with
   the reason.
@@ -1193,8 +1195,10 @@ new one, and so a concurrent firing can see an in-progress session (Step
   - **Listings.** Reuse the root listing and the top-level directory
     listings made for the rule files at `base_sha`. Make at most 3 more
     `lfx_one_github_git_get_tree` listings per run at `base_sha`, one
-    directory per call, in this order: declared directories (below),
-    `docs/` or `doc/` when the root listing shows one, then the directory
+    directory per call, in this order: declared directories and the
+    parent directory of each declared file, unless a listing this run
+    already made covers it (below), `docs/` or `doc/` when the root
+    listing shows one, then the directory
     of a changed Helm `values.yaml` or i18n file when its README or
     sibling locale files are not already in a listing. The whole-PR file
     list from Step 3.2 also shows which docs the PR changes.
@@ -1230,8 +1234,10 @@ new one, and so a concurrent firing can see an in-progress session (Step
       `(owner: <text>)`. At most 5 sites in total are used. They are
       named in the reminder and never fetched.
 
-    Ignore every other line. Declared files can be read as above;
-    declared directories take the first of the 3 extra listings. Paths
+    Ignore every other line. Declared files can be read as above, with
+    the size from their parent directory's listing; declared directories
+    and those parent directories take the first of the 3 extra listings.
+    A declared file whose size no listing gives is not read. Paths
     from every section are combined. For the reminder, the section in the
     rule file closest to the changed files wins for those files, and the
     root section covers the rest. A declared path that does not exist is
@@ -1243,9 +1249,11 @@ new one, and so a concurrent firing can see an in-progress session (Step
   (paginate) for inline comments from other reviewers and bots. Together with
   the conversation comments from Step 1.5 and the review bodies from Step 2,
   these are the input to AI bot reconciliation below. Keep this agent's
-  own inline comments from the same list too (`user.login ==
-  "{{env.REVIEWER_LOGIN}}"`): on a follow-up they hold the earlier
-  documentation findings.
+  own inline comments from the same list too: `user.login ==
+  "{{env.REVIEWER_LOGIN}}"` and a `pull_request_review_id` that is one of
+  the own reviews Step 2 kept (those with the review marker). The
+  credential can be shared, so the login alone is not enough. On a
+  follow-up these comments hold the earlier documentation findings.
 
 ### Review the dimensions
 
@@ -1442,7 +1450,10 @@ Privacy, Data Subject Rights, and Data Residency findings, and every
     route, endpoint, UI label or message, default value, CLI option and
     public API the diff adds, renames, removes or changes, with its kind,
     its action (`added`, `renamed`, `removed`, `changed`), its name, its
-    old name at `base_sha` for a rename or removal, and its `path:line`.
+    old name for a rename or removal, and its `path:line`. Take the old
+    name from the removed side of the patch in scope, not from
+    `base_sha`: on a follow-up that renames an item a second time, the
+    old name is the one the previous commits introduced.
     A behavior change or fix that touches no named item (for example a
     table that now sorts by date) is listed by a short description of the
     behavior, with kind `behavior`, so the missing-docs check and the
@@ -1514,7 +1525,10 @@ Privacy, Data Subject Rights, and Data Residency findings, and every
     are own reviews in the Step 2 list whose body contains both
     `<!-- lfx-review-agent:review -->` and
     `<!-- lfx-review-agent:docs-reminder -->`; the behaviors each one
-    named are the first code span of each bullet after that marker.
+    named are the first code span of each bullet in that review's
+    Documentation section: after the marker, and before the `Declared:`
+    line or the next line that starts with `**`. Bullets elsewhere in the
+    body, such as folded gaps, are not reminders.
     Escape new names before comparing. If the review list can't be read,
     post the reminder. It names only behaviors no earlier reminder named.
     It never says a page is missing, wrong or out of date, and you never
@@ -1553,7 +1567,10 @@ Step 2, each `[docs]` entry under `Findings outside the diff` and each
 line of a folded item. Entries with the same named item (after escaping)
 and the same doc path are one finding, however many times it was posted:
 classify and count only the latest entry, and treat the earlier ones as
-superseded. Classify each finding, in this order:
+superseded. When escaping cut a name to 100 characters, two entries match
+only if their behavior locations are also in the same file, so two long
+messages that start the same way stay separate gaps. Classify each
+finding, in this order:
 
 1. **Maintainer override.** For each own review in the Step 2 list with
    `state: DISMISSED`, take `N` from its
@@ -1572,13 +1589,16 @@ superseded. Classify each finding, in this order:
 
    | Finding | ✅ Resolved when | ⚠️ Partially addressed when |
    | --- | --- | --- |
-   | Missing docs, cited doc | The cited doc's patch adds the named item or describes the behavior, or the behavior is gone from the PR. When GitHub omits that doc's patch, the doc being in the file list, not deleted, is enough | Not used |
+   | Missing docs, cited doc | A doc patch in the PR, in the cited doc or any other doc, adds the named item or describes the behavior, or the behavior is gone from the PR | Not used |
    | Missing docs, "no doc" | Every surface the finding named is covered by a doc patch as above, or is gone | Some of those surfaces are covered, others are not |
    | Misaligned, a doc names an old item | The cited doc's patch removes or replaces the old name, or the code change is gone | The doc changed but its patch still names the old item |
    | Misaligned, a PR doc contradicts PR code | Either side's current patch makes them agree | Not used |
 
-   An edit elsewhere in the cited doc, or deleting it, resolves nothing.
-   Anything else is ❌ still open.
+   When GitHub omits a doc's patch, use that doc's content at `head_sha`
+   if Step 3.2 already read it. Otherwise the doc being in the file list,
+   not deleted, counts as covering the finding. An edit elsewhere in the
+   cited doc, or deleting it, resolves nothing. Anything else is ❌ still
+   open.
 
 Before raising a new documentation finding, compare it with the earlier
 ones. A gap with the same named item (after escaping) and the same doc
@@ -2309,7 +2329,8 @@ the top short: some readers stop there.
       with one of these reasons: `over 24,000 bytes`,
       `over the 80,000-byte total`, `over the run total`, `symlink`,
       `identical copy of <path>`, `read failed`. Name a directory whose
-      listing failed with `listing failed`. Write `skipped none` when
+      listing failed with `listing failed`; a 404 is a missing directory,
+      not a failed listing, so leave it out. Write `skipped none` when
       nothing was skipped, and `**Rule files:** none found` when there
       were none.
 5. **Footer**: after the Details block, a blank line, then this exact

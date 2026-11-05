@@ -64,7 +64,9 @@ Declared: docs site `https://docs.example.org/app` (owner `lfx-docs`)
 `<!-- lfx-review-agent:docs-reminder -->`, new. A later run treats an own
 review (`user.login` is the reviewer login, body contains the review
 marker) whose body contains this marker as a posted reminder, and the
-code-span bullets after it as the behaviors it named. A `head_moved`
+first code span of each bullet in the Documentation section (up to the
+`Declared:` line or the next line that starts with `**`) as the
+behaviors it named. Folded-gap bullets are not reminders. A `head_moved`
 `COMMENT` review counts. Never rename it once released.
 
 ## Escaping (all output)

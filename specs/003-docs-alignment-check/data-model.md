@@ -23,7 +23,7 @@ back).
 | `kind` | `flag`, `env`, `config`, `route`, `endpoint`, `ui-text`, `default`, `cli`, `api`, `behavior` (a change with no named item, described in a few words) |
 | `action` | `added`, `renamed`, `removed`, `changed` |
 | `name` | The current name (escaped, research R9) |
-| `old_name` | For `renamed` and `removed`: the name at `base_sha` |
+| `old_name` | For `renamed` and `removed`: the name on the removed side of the patch in scope (on a follow-up, the name the earlier commits introduced) |
 | `location` | `path:line` in the PR diff |
 
 Source: the patches in scope. PR text that claims an item is or is not

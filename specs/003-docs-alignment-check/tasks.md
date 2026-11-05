@@ -248,7 +248,8 @@ reminder naming only that key.
   - Earlier reminders: own reviews in the Step 2 list whose body contains
     both `<!-- lfx-review-agent:review -->` and
     `<!-- lfx-review-agent:docs-reminder -->`; their behaviors are the
-    code-span bullets after the marker. Escape new names (T006) before
+    code-span bullets in the Documentation section, up to the
+    `Declared:` line or the next bold line. Escape new names (T006) before
     comparing. If the reviews can't be read, post the reminder.
   - The reminder never says a page is missing, wrong or out of date, and
     the agent never fetches external pages. It is not a finding and is

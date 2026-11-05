@@ -1,6 +1,6 @@
 # Feature Specification: Documentation alignment check
 
-**Feature Branch**: `feature/docs-alignment-check` (proposed, not created)
+**Feature Branch**: `feature/docs-alignment-check`
 
 **Created**: 2026-11-04
 
@@ -474,8 +474,9 @@ without the section and confirm a generic reminder.
 - **FR-032**: To find whether doc files exist, the agent MUST use
   directory listings. It MUST reuse the root listing from the rule-file
   step and MUST make at most 3 more listings per run for doc candidates:
-  declared directories, `docs/` (or `doc/`), and the directory of a
-  changed Helm `values.yaml` or i18n file.
+  declared directories and the parent directories of declared files,
+  `docs/` (or `doc/`), and the directory of a changed Helm `values.yaml`
+  or i18n file.
 - **FR-033**: The agent MAY read the full contents of at most these docs
   at the target branch: the root `README` and declared in-repo doc files,
   each under `max_file_bytes`. It MUST read them only when the PR
@@ -546,10 +547,12 @@ without the section and confirm a generic reminder.
   rule.
 - **FR-043**: A follow-up MUST recheck earlier documentation findings
   from the PR's whole file list and its patches, with no extra reads. A
-  missing-docs finding is resolved when the cited doc's patch adds the
-  named item or describes the behavior (or, when GitHub omits that patch,
-  the doc is in the list and not deleted), or the behavior is gone from
-  the PR. An edit elsewhere in the doc, or deleting it, resolves nothing.
+  missing-docs finding is resolved when a doc patch in the PR, in the
+  cited doc or any other doc, adds the named item or describes the
+  behavior, or the behavior is gone from the PR. When GitHub omits a
+  doc's patch, its content at the PR head counts if the agent already
+  read it; otherwise the doc being in the list and not deleted counts.
+  An edit elsewhere in the doc, or deleting it, resolves nothing.
   A "no doc" finding is resolved when every surface it named is covered
   or gone, and partially addressed when only some are. A misaligned
   finding is resolved when the cited doc's patch changes the named item,

@@ -89,7 +89,8 @@ before "Rule files". See
 
 A later run reads the Step 2 review list (already fetched, no extra
 call), keeps own reviews that carry both the review marker and the
-reminder marker, and collects the behaviors listed after it. A follow-up
+reminder marker, and collects the behaviors in each one's Documentation
+section, up to the `Declared:` line or the next bold line. A follow-up
 posts a reminder only for named items not in that set (FR-025). New
 names go through the R9 escaping before the comparison, so they match
 the stored form.
@@ -112,9 +113,10 @@ comments are harder to match than reviews.
 - **Listings**: reuse the root listing and the top-level directory
   listings the rule-file step already made at `base_sha`. Make at most 3
   more `git_get_tree` listings per run, in this order: declared
-  directories, `docs/` (or `doc/`), then the directory of a changed Helm
-  `values.yaml` or i18n file when its README or sibling locale files are
-  not already visible.
+  directories and the parent directories of declared files (a declared
+  file's size comes from that listing), `docs/` (or `doc/`), then the
+  directory of a changed Helm `values.yaml` or i18n file when its README
+  or sibling locale files are not already visible.
 - **Reads**: only the root `README*` and declared in-repo doc files, at
   `base_sha`, each at most `max_file_bytes`, and only when
   `change_class` is not `none` or `named_items` has a rename, removal or
@@ -160,7 +162,7 @@ the whole-PR file list from Step 3.2 and its patches:
 
 | Finding | Resolved when | Partially addressed when |
 | --- | --- | --- |
-| Missing docs, cited doc | The cited doc's patch adds the named item or describes the behavior, or the behavior is gone from the PR. When GitHub omits the patch, the doc being in the file list, not deleted, is enough | Not used |
+| Missing docs, cited doc | A doc patch in the PR, in the cited doc or any other doc, adds the named item or describes the behavior, or the behavior is gone from the PR | Not used |
 | Missing docs, "no doc" | Every surface the finding named is covered by a doc patch, or is gone | Some of those surfaces are covered, others are not |
 | Misaligned, base doc names an old item | The cited doc's patch removes or replaces the old name, or the code change is gone | The doc changed but still names the old item elsewhere in its patch |
 | Misaligned, PR doc contradicts PR code | Either side's current patch makes them agree | Not used |
@@ -172,6 +174,11 @@ dismissed own approval does not resolve anything: the "dismiss stale
 approvals" setting dismisses approvals on every push, which is not a
 decision about docs. With no matching summary, the dismissal counts as
 an override; guessing wrong costs at most 2 `[minor]` findings.
+
+When GitHub omits a doc's patch, the recheck uses its content at
+`head_sha` if Step 3.2 already read it, and otherwise counts the doc
+being in the file list, not deleted. This applies to every row, so a
+fixed doc too large for a patch never keeps a gap open.
 
 **Dedupe**: before raising a documentation finding on a follow-up,
 compare it with the earlier `[docs]` findings. A finding with the same
