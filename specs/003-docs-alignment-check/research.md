@@ -40,8 +40,10 @@ follow-up and placement rules.
   for a rename or removal its old name.
 
 `none` covers refactors that keep every named item, tests, CI, dependency
-bumps, generated files, and docs-only PRs. A PR with an empty
-`named_items` list and no new user-facing surface is `none`.
+bumps, generated files, and docs-only PRs. A PR is `none` only when it
+has no named item and changes nothing a user sees or relies on. A
+behavior change or fix with no named item (a table that now sorts by
+date) is listed by a short description, with kind `behavior`.
 
 **Rationale**: Named items drive all three checks: the misaligned check
 looks for old names in docs, the missing-docs check looks for new names
@@ -158,8 +160,8 @@ the whole-PR file list from Step 3.2 and its patches:
 
 | Finding | Resolved when | Partially addressed when |
 | --- | --- | --- |
-| Missing docs, cited doc | The cited doc is in the file list, or the behavior is gone from the PR | Not used |
-| Missing docs, "no doc" | A doc of a kind the finding named is in the file list, or the surface is gone | Some surfaces got docs, others did not |
+| Missing docs, cited doc | The cited doc's patch adds the named item or describes the behavior, or the behavior is gone from the PR. When GitHub omits the patch, the doc being in the file list, not deleted, is enough | Not used |
+| Missing docs, "no doc" | Every surface the finding named is covered by a doc patch, or is gone | Some of those surfaces are covered, others are not |
 | Misaligned, base doc names an old item | The cited doc's patch removes or replaces the old name, or the code change is gone | The doc changed but still names the old item elsewhere in its patch |
 | Misaligned, PR doc contradicts PR code | Either side's current patch makes them agree | Not used |
 | Any `[docs]` finding open at a dismissed own review | That review's summary (the session comment matched by `review-of review=<N>`) shows 🔴: resolved, "dismissed by a maintainer" (spec FR-036) | Not used |
@@ -176,8 +178,14 @@ compare it with the earlier `[docs]` findings. A finding with the same
 named item (after the R9 escaping) and the same doc path is the earlier
 finding: classify it, do not raise it again. The one exception: when
 the scope is the compare diff of the new commits and that diff changes
-the named item again, it is a new behavior change and gets a new finding.
-On a whole-PR fallback (force-push or merge commit) the match always
+the named item again, it is a new behavior change and gets a new finding,
+which supersedes an earlier finding still open or partially addressed,
+so the gap counts once. Several own entries for the same named item and
+doc path (a fresh inline comment on a later round) are one finding: only
+the latest is classified and counted. The maintainer override applies on
+every review of a PR with earlier own reviews, so a same-head
+`re-review`, which runs as an initial review, does not raise a dismissed
+gap again. On a whole-PR fallback (force-push or merge commit) the match always
 applies: that diff still holds the original change, and without the
 dedupe one gap would count as a new `[minor]` and a prior one.
 
@@ -211,8 +219,10 @@ that section is 1 to 3 plain sentences with no lists.
 
 **Decision**: Every name, path, URL or owner the agent echoes from the PR
 or the repository (named items, doc paths, declared sites and owners)
-goes in a code span, after removing `<!--`, `-->`, backticks and line
-breaks and cutting it to 100 characters. This applies to the review
+goes in a code span, after removing every `<`, `>`, backtick and line
+break and cutting it to 100 characters. Removing the angle brackets
+themselves, rather than the `<!--` and `-->` sequences, means removing a
+separator can't put a delimiter back together. This applies to the review
 body, inline comments and the recap.
 
 **Rationale**: Later runs detect markers with "body contains" on the

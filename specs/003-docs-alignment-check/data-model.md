@@ -20,7 +20,7 @@ back).
 
 | Field | Meaning |
 | --- | --- |
-| `kind` | `flag`, `env`, `config`, `route`, `endpoint`, `ui-text`, `default`, `cli`, `api` |
+| `kind` | `flag`, `env`, `config`, `route`, `endpoint`, `ui-text`, `default`, `cli`, `api`, `behavior` (a change with no named item, described in a few words) |
 | `action` | `added`, `renamed`, `removed`, `changed` |
 | `name` | The current name (escaped, research R9) |
 | `old_name` | For `renamed` and `removed`: the name at `base_sha` |
@@ -95,9 +95,16 @@ raised (round N, counts as [minor])
   │    ├─ resolved            → stops counting
   │    ├─ partially addressed → counts as [minor], listed as a gap
   │    └─ still open          → counts as [minor], listed as a gap
+  ├─ new commits change the named item again while it is open
+  │                            → superseded by the new finding; the gap counts once
   └─ maintainer dismisses the 🔴 own review that carried it
-                               → resolved ("dismissed by a maintainer"), stops counting
+                               → resolved ("dismissed by a maintainer"), stops counting,
+                                 and is not raised again on any later review
 ```
+
+Several own entries for the same named item and doc path (a fresh inline
+comment on a later round) are one finding: only the latest entry is
+classified and counted.
 
 There is no transition from an author label, checkbox or PR text
 (FR-035).

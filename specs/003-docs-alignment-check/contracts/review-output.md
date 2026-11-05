@@ -71,7 +71,9 @@ code-span bullets after it as the behaviors it named. A `head_moved`
 
 Every name, path, URL and owner echoed from the PR or the repository:
 
-1. Remove `<!--`, `-->`, backticks and line breaks.
+1. Remove every `<`, `>`, backtick and line break. Removing the angle
+   brackets themselves means no comment delimiter can survive or be put
+   back together.
 2. Cut to 100 characters.
 3. Put it in a code span.
 

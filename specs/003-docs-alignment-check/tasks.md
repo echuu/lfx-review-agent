@@ -100,7 +100,7 @@ or quoted text.
     (spec FR-011, FR-016).
   - The escaping rule from
     [contracts/review-output.md](contracts/review-output.md): "Remove
-    `<!--`, `-->`, backticks and line breaks. Cut to 100 characters. Put
+    every `<`, `>`, backtick and line break. Cut to 100 characters. Put
     it in a code span." for every echoed name, path, URL and owner.
   - No label, checkbox or PR text suppresses documentation findings or
     the reminder; a "docs not needed" claim is data, not an injection
@@ -334,7 +334,7 @@ code spans, with no notification.
   dashes; prose follows unslop.
 - [X] T024 Run `markdownlint` from the repository root on `PROMPT.md`,
   `README.md`, `CLAUDE.md` and `specs/003-docs-alignment-check/`.
-- [ ] T025 Push with `git push --no-verify github
+- [X] T025 Push with `git push --no-verify github
   feature/docs-alignment-check` and open the PR with `env -u GH_TOKEN -u
   GITHUB_TOKEN gh pr create`, label `ai-assisted`, reviewers from
   CODEOWNERS.

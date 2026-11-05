@@ -364,7 +364,9 @@ without the section and confirm a generic reminder.
   A PR whose diff adds or changes user-visible or operator-visible
   behavior (a route, flag, environment variable, config key, default
   value, UI label or message, public API, or CLI output) qualifies,
-  whatever its title says.
+  whatever its title says. So does a fix that changes what a user sees or
+  relies on without touching a named item (a table that now sorts by
+  date); the agent then describes the behavior in a few words.
 - **FR-003**: Only a qualifying PR or round MUST get the missing-docs
   check (FR-010 to FR-014) and the reminder (FR-020 to FR-025).
 - **FR-004**: The misaligned check (FR-015 to FR-017) and the existing
@@ -415,8 +417,9 @@ without the section and confirm a generic reminder.
 - **FR-015**: The agent MUST raise a misaligned finding when a doc changed
   in the PR contradicts code in the PR, or when a doc at the target branch
   names something the PR renames, removes or changes (a flag, environment
-  variable, endpoint, route, UI label or default value) and the PR does
-  not update that doc.
+  variable, endpoint, route, UI label or default value) and the PR
+  leaves that reference in place. An edit elsewhere in the same doc is
+  not an update.
 - **FR-016**: A misaligned finding MUST name both locations, the code and
   the doc, each as `path:line`. A finding that cannot name both MUST be
   dropped.
@@ -513,7 +516,9 @@ without the section and confirm a generic reminder.
   dismisses approvals, and an approval carries at most 2 `[minor]`
   findings. A human approval alone does not clear the agent's review and
   is not an override. Gaps raised by later commits are new findings
-  (FR-040).
+  (FR-040). The override applies on every review of a PR with earlier
+  reviews by the agent, including a re-review of the same head, which
+  runs as an initial review: a gap it resolved is not raised again.
 
 #### Follow-ups
 
@@ -524,9 +529,12 @@ without the section and confirm a generic reminder.
   MUST NOT be raised again, so one gap never counts twice. The one
   exception: when the review's scope is the diff of the new commits and
   that diff changes the named item again, it is a new finding, even when
-  the earlier one was resolved by a dismissal (FR-036). On a whole-PR
-  fallback the match always applies, since that diff still holds the
-  original change.
+  the earlier one was resolved by a dismissal (FR-036). The new finding
+  supersedes an earlier one still open or partially addressed, so the gap
+  counts once. Several entries the agent posted for the same named item
+  and doc location are one finding; only the latest is classified and
+  counted. On a whole-PR fallback the match always applies, since that
+  diff still holds the original change.
 - **FR-041**: Earlier documentation findings MUST be classified as
   resolved, partially addressed or still open, like every other finding.
 - **FR-042**: An earlier documentation finding (missing or misaligned)
@@ -538,10 +546,14 @@ without the section and confirm a generic reminder.
   rule.
 - **FR-043**: A follow-up MUST recheck earlier documentation findings
   from the PR's whole file list and its patches, with no extra reads. A
-  missing-docs finding is resolved when that list includes the cited doc
-  (or, for a "no doc" finding, any doc of that kind), or the behavior is
-  gone from the PR. A misaligned finding is resolved when the cited doc's
-  patch changes the named item, or the code change is gone. A doc that
+  missing-docs finding is resolved when the cited doc's patch adds the
+  named item or describes the behavior (or, when GitHub omits that patch,
+  the doc is in the list and not deleted), or the behavior is gone from
+  the PR. An edit elsewhere in the doc, or deleting it, resolves nothing.
+  A "no doc" finding is resolved when every surface it named is covered
+  or gone, and partially addressed when only some are. A misaligned
+  finding is resolved when the cited doc's patch changes the named item,
+  or the code change is gone. A doc that
   changed but still names the old item is partially addressed. No rule
   depends on a read that may not fit the budget, so a finding never stays
   open only because the agent could not look.
