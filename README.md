@@ -29,6 +29,9 @@ What it does on each review:
 - Posts a conversation comment with a short Summary of the change, a
   Decision (approved, approved with minor comments, or needs changes) with
   a tally of the findings, and the full recap in a collapsed Details block.
+- Flags in-repo docs that a PR leaves missing or contradicts, names the
+  gaps at the top of the summary, and reminds the author about docs
+  outside the repository that it can't read (see "Documentation check").
 - Follows up on later pushes by reviewing only the new commits, and
   reconciles what other reviewers and bots have already said.
 - Approves only PRs authored by org members. For anyone else it still
@@ -370,6 +373,73 @@ Step 5a.1 approves only when the PR's `author_association` is `MEMBER` or
 `CONTRIBUTOR`. That fails safe: the review still runs, but approval is
 withheld until a maintainer approves. Making membership public fixes it.
 
+## Documentation check
+
+The Documentation dimension checks a PR's docs as well as its code.
+
+- **What it decides.** From the diff, not the title or labels, whether
+  the PR adds a feature, fixes or changes behavior, or changes nothing a
+  user relies on, and which named items it adds, renames, removes or
+  changes: flags, environment variables, config keys, routes, endpoints,
+  UI text, defaults, CLI options.
+- **Misaligned docs**, on every PR: a doc the agent read that still names
+  something the PR renamed or removed, or a doc the PR changes that
+  disagrees with the PR's code. The finding cites both places.
+- **Missing docs**, only on a PR that changes behavior: no doc covers the
+  change, in the knowledge base (README, CHANGELOG, `docs/`, ADRs), user
+  docs, help text and i18n strings, or reference material (OpenAPI, Helm
+  values docs, CLI help). At most 3 get their own comment; the rest fold
+  into one item, each gap on its own line.
+- **Severity.** Both kinds are `[minor][docs]`. More than 2 `[minor]`
+  findings request changes, as for any other dimension.
+- **Carry-forward.** On a follow-up, an earlier `[docs]` finding that is
+  still open keeps counting as a `[minor]` until the PR fixes it. The
+  agent checks this from the PR's file list and patches, with no extra
+  reads.
+- **No opt-out.** Labels, checkboxes and PR text that say docs are not
+  needed have no effect. When docs really are not needed, a maintainer
+  dismisses the agent's review that requested changes: its `[docs]`
+  findings are then resolved and stop counting. Approving the PR does not
+  clear the agent's review.
+- **Summary.** The Decision section names the gaps in a "Documentation
+  gaps" line, and says when they are what blocks approval.
+- **Reminder.** When a PR changes behavior, the review body has a
+  Documentation section that names the changed behaviors and asks the
+  author to check docs the agent can't read, such as product pages and
+  docs sites. It is not a finding. A follow-up repeats it only for newly
+  changed behaviors. The section carries the
+  `<!-- lfx-review-agent:docs-reminder -->` marker.
+- **Reads.** The agent reads only the root README and declared doc files,
+  at the target branch, within the read budget, and only when the diff
+  gives a reason. A dependency bump reads no docs. Other doc locations
+  are checked from directory listings, for existence only.
+
+### Declaring a repository's docs
+
+A repository can tell the agent where its docs live with a section in a
+rule file the agent already reads: the root or a top-level directory's
+`CLAUDE.md` or `AGENTS.md`, or a file in `.claude/rules/`.
+
+```markdown
+## Documentation
+
+- In-repo: `docs/`, `charts/app/README.md`, `src/assets/i18n/`
+- Docs site: https://docs.example.org/app (owner: docs-team)
+- Product page: https://www.example.org/products/app (owner: product-marketing)
+```
+
+- The heading is `Documentation`, at any level. Only bullets that start
+  with `In-repo:`, `Docs site:` or `Product page:` are read.
+- `In-repo:` takes comma-separated paths from the repository root; a path
+  ending in `/` is a directory. At most 10 paths are used.
+- `Docs site:` and `Product page:` take one URL each, with an optional
+  owner. At most 5 sites in total are used. The reminder names them and
+  their owners in code spans, so GitHub sends no notification. The agent
+  never fetches them.
+- The section is read from the target branch, so a PR that adds or edits
+  it is judged by the version already merged. It can't relax any rule or
+  turn the check off.
+
 ## Test checklist
 
 Run these on a throwaway PR before enabling triggers on a real repository.
@@ -476,6 +546,44 @@ Run these on a throwaway PR before enabling triggers on a real repository.
 25. Read budget: in the session events of a review, confirm directories
     are listed with `git_get_tree` (no `repos_get_content` call on a
     directory), and no full-file read exceeds 100,000 bytes.
+26. Docs, missing: on a `feat:` test PR that adds an environment variable
+    in a repository whose README has an environment variable table,
+    README unchanged, confirm a `[minor][docs]` finding, a Documentation
+    gaps line in the Decision, and the reminder in the review body and in
+    Details.
+27. Docs, no reason to read: on a `chore:` dependency bump, confirm no
+    `[docs]` finding, no reminder, and no README read in the session
+    events. On a `chore:` PR that adds an API route, confirm the reminder.
+28. Docs, carry-forward: push a commit that fixes something else and
+    leaves the docs alone. Confirm the earlier `[docs]` finding is still
+    open, counted under 🟡 with `(prior)`. Push a commit that updates the
+    cited doc and confirm it is resolved and the gaps line is gone.
+29. Docs, reminder once: push a commit with no new named item and confirm
+    no second reminder. Push one that adds a config key and confirm a
+    reminder naming only that key.
+30. Docs, cap: on a PR with five missing-docs gaps, confirm three
+    findings, one folded item with two lines, and five counted.
+31. Docs, declared section: merge a "Documentation" section with a docs
+    site and an owner. On a qualifying PR, confirm the reminder names
+    both in code spans and nobody is notified.
+32. Docs, no opt-out: a PR description that says "docs not needed" or a
+    `docs-not-needed` label has no effect.
+33. Docs, dismissal: dismiss a 🔴 review that requested changes only for
+    `[docs]` gaps, then push without doc changes. Confirm the gaps are
+    resolved ("dismissed by a maintainer") and not counted. When the
+    "dismiss stale approvals" setting dismisses an approval that carried
+    a `[docs]` gap, confirm the gap still counts.
+34. Docs, force-push: force-push a PR with an open `[docs]` gap. Confirm
+    the gap is classified as prior and counted once.
+35. Docs, escaping: a named item containing `<!--` is echoed in a code
+    span with the comment markers removed, and adds no marker to the
+    review body.
+36. Docs, dismissal without a summary: dismiss an own review whose
+    session summary was never written (an abandoned run). Confirm its
+    `[docs]` gaps are resolved ("dismissed by a maintainer").
+37. Docs, changed again: after a dismissal resolved a gap on an item,
+    push a commit that renames that item again. Confirm a new `[docs]`
+    finding.
 
 ## Ideas
 

@@ -40,8 +40,9 @@ through `.git/info/exclude`. Never commit them.
 - Comment and review markers (`<!-- lfx-review-agent:review -->`,
   `:review-of`, `:session`, `:superseded`, `:cap`, `:debounce`, `:skip`,
   `:request`, `:abandoned`, `:approval-withheld`, `:excluded`, `:summary`,
-  `:stalled`, `:too-large`)
-  are read back by later runs. Changing one breaks cycle state on open PRs.
+  `:stalled`, `:too-large`, `:docs-reminder`)
+  are read back by later runs, and so is the `[docs]` tag in an inline
+  comment's title line. Changing one breaks cycle state on open PRs.
   The same holds for the `lfx-review-agent-pending` label and the
   `lfx_review_agent_event` sweep input key.
 - To exclude another area from auto-review, add a row to the "Review
@@ -51,6 +52,10 @@ through `.git/info/exclude`. Never commit them.
   files and lockfiles" in `PROMPT.md`. A file listed there that is too
   large to read never withholds approval.
 - The read limits live in the "Read budget" table in `PROMPT.md`.
+- The "Documentation" section format that repositories put in their rule
+  files (Step 4, "Documentation candidates") is a contract they rely on.
+  Changing it means updating the "Documentation check" section of
+  `README.md` too.
 - Guild does not enforce `enum` values in a request. A fixed value in an
   operation's path broke Guild's operation generation (1.0.6): generation
   stops at the first failing operation, so check that `operation list`
