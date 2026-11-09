@@ -4,11 +4,13 @@
 #
 # Set the hourly sweep trigger's repository list (README.md, Triggers).
 # The list is built from the workspace's active `pull_request synchronize`
-# triggers for the Native reviewer, controller and REVIEW_AGENT; onboarding is the source of
-# truth. Rerun it after onboarding a repository.
+# triggers for the Native reviewer, controller and optional REVIEW_AGENT.
+# Onboarding is the source of truth. Rerun it after onboarding a repository.
 #
 # Usage: WS=<workspace-id> scripts/sweep-trigger.sh [--apply]
 #   Without --apply, prints what it would do and changes nothing.
+#   REVIEW_AGENT=<agent> also includes that agent's triggers; optional.
+#   The Native reviewer and controller are always included.
 #
 # An existing trigger keeps its active or inactive state; change that with
 # `guild trigger activate|deactivate`. A new trigger starts active and runs
