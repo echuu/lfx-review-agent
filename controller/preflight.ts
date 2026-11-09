@@ -52,6 +52,13 @@ export type Pr = {
 };
 export const login = "lfx-one";
 const marker = "<!-- lfx-review-agent:review -->";
+// Keep limits and marker classification in sync with PROMPT.md.
+const MAX_DIFF_LINES = 20000;
+const MAX_FILES = 300;
+const MAX_REVIEW_COMMENTS = 150;
+const MAX_REVIEWS = 10;
+const STALE_START_MS = 45 * 60000;
+const COOLDOWN_MS = 5 * 60000;
 
 export function readEvent(text: string): Event {
   const input = text.trim();
@@ -135,14 +142,14 @@ export function historyScope(kind: string, head: string, reviews: Review[], revi
       : { mode: "full" };
   if (!latest)
     return kind === "synchronize"
-      ? { mode: "fallback", reason: "check first-review recovery" }
+      ? { mode: "undecided", reason: "check first-review recovery" }
       : { mode: "full" };
   if (kind === "re-review" && (!latest.commit_id || latest.commit_id === head))
     return { mode: "full" };
   if (latest.commit_id === head)
     return { mode: "skip", reason: "head already reviewed" };
   if (!latest.commit_id)
-    return { mode: "fallback", reason: "missing prior SHA" };
+    return { mode: "undecided", reason: "missing prior SHA" };
   return { mode: "delta", from: latest.commit_id, to: head };
 }
 
@@ -185,9 +192,9 @@ export function eligibility(
   if (kind === "re-review" || !time || !Number.isFinite(Date.parse(time)))
     return { action: "delegate" };
   if (
-    (pr.additions ?? 0) + (pr.deletions ?? 0) > 20000 ||
-    (pr.changed_files ?? 0) > 300 ||
-    (pr.review_comments ?? 0) > 150
+    (pr.additions ?? 0) + (pr.deletions ?? 0) > MAX_DIFF_LINES ||
+    (pr.changed_files ?? 0) > MAX_FILES ||
+    (pr.review_comments ?? 0) > MAX_REVIEW_COMMENTS
   )
     return { action: "delegate" };
   const own = comments
@@ -196,7 +203,7 @@ export function eligibility(
   const sessions = own.filter((c) =>
     c.body?.includes("lfx-review-agent:session"),
   );
-  if (sessions.length >= 10) return { action: "delegate" };
+  if (sessions.length >= MAX_REVIEWS) return { action: "delegate" };
   if (own.some((c) => c.body?.includes("lfx-review-agent:excluded")))
     return { action: "delegate" };
   const age = (c: Comment) => Math.max(0, Date.parse(time) - Date.parse(c.updated_at));
@@ -205,7 +212,7 @@ export function eligibility(
       sessions.some(c => {
         const start = c.body?.match(/<!-- lfx-review-agent:session review=\d+ started=(\S+) -->/);
         return !start || !Number.isFinite(Date.parse(start[1]));
-      }) || starts.some(c => age(c) > 45 * 60000)) {
+      }) || starts.some(c => age(c) > STALE_START_MS)) {
     return { action: "delegate" };
   }
   const live = reviews
@@ -217,7 +224,7 @@ export function eligibility(
     return { action: live?.state === "APPROVED" ? "delegate" : "running", pending: true };
   }
   const recent = own.find(c => commentClass(c) !== "skip");
-  if (kind !== "ready_for_review" && recent && age(recent) < 5 * 60000 &&
+  if (kind !== "ready_for_review" && recent && age(recent) < COOLDOWN_MS &&
       !["abandoned", "stalled", "too-large"].includes(commentClass(recent))) {
     if (live?.state === "APPROVED") return { action: "delegate" };
     const summary = commentClass(recent) === "summary" ? recent : undefined;

@@ -133,7 +133,7 @@ test("dismissed and partial reviews advance scope independently of the verdict",
     historyScope("ready_for_review", "x", [
       marked("DISMISSED", undefined, { commit_id: undefined }),
     ]).mode,
-    "fallback",
+    "undecided",
   );
 });
 test("other tools using the same account do not count as own reviews", () => {
@@ -160,7 +160,7 @@ test("other tools using the same account do not count as own reviews", () => {
   );
 });
 test("missing first review delegates recovery instead of skipping", () => {
-  assert.equal(historyScope("synchronize", "a", []).mode, "fallback");
+  assert.equal(historyScope("synchronize", "a", []).mode, "undecided");
 });
 test("safe skips preserve cap, recent-comment, in-progress and exclusion side effects", () => {
   const comment = {

@@ -5,7 +5,8 @@ const user = z.object({ login: z.string() });
 const ref = z.object({ sha: z.string(), ref: z.string().optional() });
 export const prMetadata = z.object({
   number: z.number(), state: z.string(), merged: z.boolean().optional(),
-  draft: z.boolean().optional(), head: ref, base: ref, user,
+  draft: z.boolean().optional(), head: ref,
+  base: ref.extend({ repo: z.object({ private: z.boolean() }).optional() }), user,
   title: z.string().optional(), body: z.string().nullable().optional(),
   html_url: z.string().optional(), author_association: z.string().optional(),
   mergeable: z.boolean().nullable().optional(), mergeable_state: z.string().optional(),

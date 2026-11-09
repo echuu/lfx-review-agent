@@ -204,3 +204,23 @@ test("draft automatic events stop while manual requests and sweeps preserve revi
   assert.equal((await dispatch([], [], { ...event, lfx_review_agent_event: "sweep" }, overrides)).worker, 0);
   assert.throws(() => metadata.prMetadata.parse({ state: "open" }));
 });
+
+
+test("compiled history skip avoids reviewer dispatch without a running or cooldown gate", async () => {
+  const input = { ...event, action: "ready_for_review" };
+  const result = await dispatch([], [review("CHANGES_REQUESTED", { commit_id: "b" })], input);
+  assert.equal(result.worker, 0);
+  assert.match(result.text, /head already reviewed/);
+  assert.equal((await dispatch([], [review("CHANGES_REQUESTED", { commit_id: "a" })], input)).worker, 1);
+});
+test("compiled handoff preserves repository privacy and undecided scope", async () => {
+  const input = { ...event, action: "synchronize" };
+  const privacy = { ...pr, base: { ...pr.base, repo: { private: true } } };
+  const result = await dispatch([], [], input, { lfx_one_github_pulls_get: async () => privacy });
+  assert.equal(result.worker, 1);
+  const envelope = JSON.parse(result.calls.find(([name]) => name === "reviewer")[1].text);
+  assert.deepEqual(Object.keys(envelope).sort(), ["event", "prepared"]);
+  assert.deepEqual(envelope.event, input);
+  assert.equal(envelope.prepared.pr.base.repo.private, true);
+  assert.equal(envelope.prepared.scope.mode, "undecided");
+});

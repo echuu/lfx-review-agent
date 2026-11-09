@@ -17,7 +17,7 @@
 # reviews on `@lfx-one re-review` comments.
 set -euo pipefail
 
-AGENT=${REVIEW_AGENT:-linux-foundation~lfx-review-agent}
+AGENT=linux-foundation~lfx-review-agent
 # Keep in sync with RE_REVIEW_FILTER in scripts/onboard-repo.sh.
 RE_REVIEW_FILTER='^\s*@lfx-one\s+re-review\b'
 

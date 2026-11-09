@@ -17,7 +17,7 @@ import { prMetadata, reviewMetadata, commentMetadata } from "./metadata.js";
 
 const inputSchema = z.object({ type: z.literal("text"), text: z.string() });
 const outputSchema = z.object({ type: z.literal("text"), text: z.string() });
-const reviewer = guildAgentTool({ inputSchema: z.object({ text: z.string() }), outputSchema, calls: "@guildai/linux-foundation~lfx-review-agent@0.1.24" });
+const reviewer = guildAgentTool({ inputSchema: z.object({ text: z.string() }), outputSchema, calls: "@guildai/linux-foundation~lfx-review-agent@0.1.25" });
 function withOutput<I, O>(source: Pick<Tool<I>, "inputSchema">, endpoint: Endpoint, outputSchema: z.ZodType<O>): Tool<I, O> {
   return guildServiceTool("lfx-one-github", {
     description: endpoint.description, inputSchema: source.inputSchema, outputSchema,
@@ -108,6 +108,7 @@ async function run(
       try {
         const posted = commentMetadata.parse(await task.tools.lfx_one_github_issues_create_comment({
           ...issue,
+          // Keep the debounce notice in sync with PROMPT.md.
           body: `<!-- lfx-review-agent:debounce -->\n@${pr.user.login} A recent review was posted within the last 5 minutes: ${reportUrl}. I won't re-review yet. Push another update after 5 minutes if you want another pass.`,
         }));
         if (posted.user?.login !== login)
@@ -158,7 +159,7 @@ async function run(
       user: { login: pr.user.login },
       author_association: pr.author_association,
       head: { sha: pr.head.sha, ref: pr.head.ref },
-      base: { sha: pr.base.sha, ref: pr.base.ref },
+      base: { sha: pr.base.sha, ref: pr.base.ref, repo: pr.base.repo },
       mergeable: pr.mergeable,
       mergeable_state: pr.mergeable_state,
       additions: pr.additions,

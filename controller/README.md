@@ -1,7 +1,7 @@
 # Review controller
 
 The root remains the Native reviewer. Publish its prepared-input support
-as 0.1.24 before deploying the controller, which calls that Native version.
+as 0.1.25 before deploying the controller, which calls that Native version.
 Install both agents in the same workspace with `REVIEWER_LOGIN` configured.
 The reviewer's Guild model policy selects the model; neither agent pins it.
 
@@ -40,7 +40,12 @@ handling before cutover.
    originals untouched with no replacement. Avoid onboarding/filter helpers.
 2. Verify the same GitHub connection/credential for the controller first.
    Creation chooses credentials for caller/workspace/agent; no CLI binding
-   override exists. Confirm the binding before activating the pilot.
+   override exists. Also authorize the controller UUID on that credential:
+   create an ALLOW policy scoped to the pilot workspace and controller, for
+   `pulls_get`, `pulls_list_reviews`, `issues_list_comments`,
+   `issues_add_labels`, `issues_create_comment`, `issues_update_comment`.
+   Keep the Native policy and default-deny for unmatched operations. See the
+   root README's Credential policy commands. Verify access before cutover.
 3. Deactivate all active originals: `guild trigger deactivate "$OLD_ID"`.
    Verify with `trigger get`; retain originals and let running reviews finish.
 4. Copy each snapshot into the flags below. Choose an unused `NEW_NAME`
@@ -58,8 +63,7 @@ handling before cutover.
    full JSON/placeholders. Compare saved replacements; deactivate on mismatch.
 5. This is not atomic: record the gap and inspect deliveries/sessions for
    missed events. Never reactivate originals while replacements are active.
-6. Set `REVIEW_AGENT=linux-foundation~lfx-review-controller` and run
-   `WS="$WS" REVIEW_AGENT="$REVIEW_AGENT" scripts/sweep-trigger.sh --apply`.
-   The Native sweep covers both groups and retains its existing activation state.
+6. Run `WS="$WS" scripts/sweep-trigger.sh --apply`. The Native sweep always
+   includes both agent groups and retains its existing activation state.
 7. Rollback: deactivate/verify every replacement, then
    `guild trigger activate "$OLD_ID"` only for originally active IDs. Repeat 6.
