@@ -451,6 +451,26 @@ Call `lfx_one_github_pulls_get` for the triggering PR. Set `head_sha` to its
 `base_sha` to its `base.ref` and `base.sha`; Step 5c uses them to detect a
 retarget or a target branch change.
 
+**Server errors.** If `lfx_one_github_pulls_get` fails with a 5xx status
+(500 to 599, including the integration's `502 Bad Gateway: The upstream
+integration service returned HTTP 503`), retry it up to **3** times, so
+Step 1 makes at most 4 `lfx_one_github_pulls_get` calls. There is no wait
+tool, so space the attempts with a read. Before each retry, make the first
+of these reads that this run has not made yet, and wait for its result
+before retrying. Do not send a retry in the same batch as its read.
+
+1. `lfx_one_github_issues_list_comments` for the PR, paginated until
+   complete. Step 1.5 reuses it, as it reuses the Step 0.5 list.
+2. `lfx_one_github_pulls_list_reviews` for the PR, paginated until
+   complete. Step 1.5 and Step 2 reuse it.
+
+When both reads are already made, call
+`lfx_one_github_pulls_list_reviews` with `per_page: 1` and `page: 1`
+instead, and ignore its result. A read that fails counts as made, but
+its partial list is discarded; the step that needs that list fetches it
+again. Do not retry other errors (401, 403, 404, rate limits) this way.
+If every attempt fails, go to Error handling.
+
 1. **Not open** (`state` is not `open`, or `merged: true`) → stop. Nothing
    to do; this can happen if the PR was closed between the event firing and
    this run starting. For a `re-review`, post a skip notice first (see
@@ -471,8 +491,8 @@ a review is due.** Posting it first would make the next firing see an in-progres
 session and exit, and would comment on PRs this step is about to skip.
 
 Call `lfx_one_github_issues_list_comments` for the PR and paginate until the
-list is complete, unless Step 0.5 already fetched it. Keep the full list for
-the Step 4 bot reconciliation. Keep only comments with
+list is complete, unless Step 0.5 or Step 1 already fetched it. Keep the
+full list for the Step 4 bot reconciliation. Keep only comments with
 `user.login == "{{env.REVIEWER_LOGIN}}"` for the gates. A `re-review`
 commenter was verified and acknowledged in Step 0.5, so do not repeat
 either here.
@@ -530,8 +550,9 @@ Parse every session marker (`session-start` and `session-summary`):
   Step 3.5 closes these out. A stale start has a published review when
   Step 5c submitted the formal review and Step 6 then failed before
   updating the comment. Decide it from the review history: call
-  `lfx_one_github_pulls_list_reviews` (paginate until complete; Step 2
-  reuses this list) and keep own reviews whose `body` contains
+  `lfx_one_github_pulls_list_reviews` (paginate until complete, unless
+  Step 1 already fetched it; Step 2 reuses this list) and keep own reviews
+  whose `body` contains
   `<!-- lfx-review-agent:review -->`. The start (`review=N`, `started=T`)
   has a published review if either of these holds:
   - One of those reviews carries the marker
@@ -807,7 +828,7 @@ trigger another run. It is not a session comment, so it does not affect
 ## Step 2: Derive cycle state from review history
 
 Call `lfx_one_github_pulls_list_reviews` for the PR and paginate until complete
-(reuse the list from Step 1.5 if it already fetched one).
+(reuse the list from Step 1 or Step 1.5 if either already fetched one).
 Keep the full list for the Step 4 bot reconciliation, and save its length
 as `review_count`. Filter to reviews
 with `user.login == "{{env.REVIEWER_LOGIN}}"` **and** a `body` containing
@@ -2407,7 +2428,8 @@ Report every failed label call.
 - A missing or unauthorized GitHub credential surfaces as a tool error.
   Stop and report it; do not retry in a loop.
 - Any other tool failure (rate limit, permission, network), apart from the
-  single 422 retry and the server-error retries in 5c, the best-effort
+  server-error retries in Step 1 (and their spacing reads), the single 422
+  retry and the server-error retries in 5c, the best-effort
   display-name lookup in Step 6, the rule-file reads in Step 4, the
   `lfx_one_github_git_get_tree` listings and the full-file reads in Steps
   3.2 and 4 (a failed one leaves the file unread with reason `size
